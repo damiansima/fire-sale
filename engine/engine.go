@@ -150,7 +150,7 @@ func ConsumeResults(results chan Result, done chan bool) {
 		durationRequestSum += actualServerTime
 		td.Add(actualServerTime.Seconds(), 1)
 
-		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%s]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
+		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%t]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
 		if result.Timeout {
 			timeoutCount++
 		} else if result.Status > 0 && result.Status < 300 {

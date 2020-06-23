@@ -31,21 +31,20 @@ By unit of time
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
 |Multiple runs per ACTUAL RUN| [PENDING] ||
-|Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|
 |Speed up to a desired number of request vs concurrent users  | [PENDING] ||
+|Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|
 |Deal with TODOs  | [PENDING] ||
+|Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
+|Tests dude  | [PENDING] ||
+|Warm up request|[PENDING]||
+|DSL|[PENDING]||
 |Certificates handling  | [PENDING] ||
 |Numbers with network latency should be a configuration| [PENDING] | |
 |BUG in the combination of number of jobs workers and running time  | [PENDING] | |
-|Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
-|Worker request speed | [MAYBE] ||
 |Capacity testing | [PENDING] |Keep adding workers up until timeout is constant|
 |Spike  Traffic | [PENDING] ||
-|Warm up request|[PENDING]||
-|Tests dude  | [PENDING] ||
 |Reporting As a module|[PENDING]| Request through time, percentiles through time, latency|
 |Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|
-|DSL|[PENDING]||
 |Swagger Scaffolding|[PENDING]||
 |Support for gPRC|[PENDING]||
 
