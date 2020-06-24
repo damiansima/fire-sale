@@ -20,6 +20,14 @@ type RampUp struct {
 
 var DefaultRampUp RampUp = RampUp{Step: 1, Time: 0}
 
+// TODO this probably needs a new name
+type Scenario struct {
+	Name         string
+	Distribution float32
+	JobCreator   func(id int) Job
+}
+
+// TODO this probably needs a new name
 type Job struct {
 	Id                   int
 	Method               string
@@ -42,8 +50,11 @@ type Result struct {
 // AllocateJobs creates jobs and adds them to the jobs queue
 // It receives noOfJobs and testDurationMs, if the second is grated than 0 it takes precedences and keeps
 // pushing jobs during the defined period. If not the specified number of jobs will be created
-func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond int, jobCreator func(id int) Job, jobs chan Job) {
+func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, jobs chan Job) {
 	log.Debugf("Allocating jobs ...")
+
+	distributions := buildDistributionBuckets(scenarios)
+
 	if testDuration > 0 {
 		keepRunning := true
 		go func() {
@@ -57,20 +68,20 @@ func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond in
 			log.Debugf("Max request per second [%d]", maxSpeedPerSecond)
 			for i := 0; keepRunning; {
 				for j := 0; j < maxSpeedPerSecond; j++ {
-					allocateJob(i, jobCreator, jobs)
+					allocateJob(i, selectScenario(distributions, scenarios).JobCreator, jobs)
 					i++
 				}
 				time.Sleep(1 * time.Second)
 			}
 		} else {
 			for i := 0; keepRunning; i++ {
-				allocateJob(i, jobCreator, jobs)
+				allocateJob(i, selectScenario(distributions, scenarios).JobCreator, jobs)
 			}
 		}
 	} else {
 		log.Debugf("Allocating [%d]job", noOfJobs)
 		for i := 0; i < noOfJobs; i++ {
-			allocateJob(i, jobCreator, jobs)
+			allocateJob(i, selectScenario(distributions, scenarios).JobCreator, jobs)
 		}
 		log.Debugf("Stop allocation")
 	}
@@ -174,6 +185,21 @@ func ConsumeResults(results chan Result, done chan bool) {
 	log.Infof("Timeout [%d] - Fail [%d] - Success [%d]  ", timeoutCount, failCount, successCount)
 
 	done <- true
+}
+
+func buildDistributionBuckets(scenarios []Scenario) []float32 {
+	scenarioDistributions := make([]float32, len(scenarios))
+	for i := 0; i < len(scenarios); i++ {
+		scenarioDistributions[i] = scenarios[i].Distribution
+	}
+	distributions := GetDistribution(scenarioDistributions)
+	return distributions
+}
+
+func selectScenario(distributions []float32, scenarios []Scenario) Scenario {
+	scenario := scenarios[SelectBucket(distributions)]
+	log.Debugf("Selecting Scenario %s", scenario.Name)
+	return scenario
 }
 
 func allocateJob(id int, jobCreator func(id int) Job, jobs chan Job) {

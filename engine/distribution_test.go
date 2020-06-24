@@ -7,7 +7,7 @@ import (
 
 // TODO add proper testing to this
 func TestGetDistribution(t *testing.T) {
-	//distribution := []float32{0.2, 0.2, 0.2, 0.2, 0.2}
+	//Distribution := []float32{0.2, 0.2, 0.2, 0.2, 0.2}
 	distribution := []float32{0.25, 0.25, 0.25, 0.25}
 	fmt.Printf("%v \n", distribution)
 	getDistribution := GetDistribution(distribution)

@@ -17,52 +17,60 @@ func main() {
 	log.Info("Everything must Go[lang] ...")
 
 	noOfRequest := 1
-	testDuration := 1 * time.Minute
+	testDuration := 0 * time.Minute
 
-	noOfWorkers := 50
+	noOfWorkers := 1
 	maxRequestPerSecond := 0
 
-	rampUp := engine.RampUp{Step: 1, Time: 1 * time.Minute}
+	rampUp := engine.RampUp{Step: 1, Time: 0 * time.Minute}
 
 	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", noOfRequest, testDuration, noOfWorkers, maxRequestPerSecond, rampUp)
 
-	jobCreator := func(id int) engine.Job {
-		var method string
-		var basePath string
-		headers := make(map[string]string)
-		var bodyBuffer *bytes.Buffer
-
-		method = "GET"
-		bodyBuffer = bytes.NewBuffer([]byte(""))
-		basePath = "https://www.infobae.com"
-
-		return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: defaultTimeout, AllowConnectionReuse: true}
-	}
-
-	run(noOfWorkers, noOfRequest, testDuration, maxRequestPerSecond, jobCreator, rampUp)
+	scenarios := defineScenarios()
+	run(noOfWorkers, noOfRequest, testDuration, maxRequestPerSecond, scenarios, rampUp)
 	log.Info("[¡¡¡SOLD!!!]")
 }
 
-func run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedPerSecond int, jobCreator func(id int) engine.Job, rampUp engine.RampUp) {
-	start := time.Now()
+func defineScenarios() []engine.Scenario {
+	var scenarios []engine.Scenario
 
-	jobBufferSize := 15
-	resultBufferSize := 1000 * noOfWorkers
-	jobs := make(chan engine.Job, jobBufferSize)
-	results := make(chan engine.Result, resultBufferSize)
+	s0 := engine.Scenario{
+		Name:         "Basic Scenario 0",
+		Distribution: 0.8,
+		JobCreator: func(id int) engine.Job {
+			var method string
+			var basePath string
+			headers := make(map[string]string)
+			var bodyBuffer *bytes.Buffer
 
-	go engine.AllocateJobs(noOfRequest, testDuration, maxSpeedPerSecond, jobCreator, jobs)
+			method = "GET"
+			bodyBuffer = bytes.NewBuffer([]byte(""))
+			basePath = "https://www.infobae.com"
 
-	done := make(chan bool)
-	go engine.ConsumeResults(results, done)
-
-	if (engine.RampUp{}) == rampUp {
-		rampUp = engine.DefaultRampUp
+			return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: defaultTimeout, AllowConnectionReuse: true}
+		},
 	}
-	engine.RunWorkers(noOfWorkers, rampUp, jobs, results)
-	<-done
 
-	log.Infof("Execution toke [%s]", time.Now().Sub(start))
+	s1 := engine.Scenario{
+		Name:         "Basic Scenario 1",
+		Distribution: 0.2,
+		JobCreator: func(id int) engine.Job {
+			var method string
+			var basePath string
+			headers := make(map[string]string)
+			var bodyBuffer *bytes.Buffer
+
+			method = "GET"
+			bodyBuffer = bytes.NewBuffer([]byte(""))
+			basePath = "https://www.infobae.com"
+
+			return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: defaultTimeout, AllowConnectionReuse: true}
+		},
+	}
+
+	scenarios = append(scenarios, s0, s1)
+
+	return scenarios
 }
 
 func configureLog(logLevel string) {
@@ -80,3 +88,27 @@ func configureLog(logLevel string) {
 		log.SetLevel(level)
 	}
 }
+
+func run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []engine.Scenario, rampUp engine.RampUp) {
+	start := time.Now()
+
+	jobBufferSize := 15
+	resultBufferSize := 1000 * noOfWorkers
+	jobs := make(chan engine.Job, jobBufferSize)
+	results := make(chan engine.Result, resultBufferSize)
+
+	go engine.AllocateJobs(noOfRequest, testDuration, maxSpeedPerSecond, scenarios, jobs)
+
+	done := make(chan bool)
+	go engine.ConsumeResults(results, done)
+
+	if (engine.RampUp{}) == rampUp {
+		rampUp = engine.DefaultRampUp
+	}
+	engine.RunWorkers(noOfWorkers, rampUp, jobs, results)
+	<-done
+
+	log.Infof("Execution toke [%s]", time.Now().Sub(start))
+}
+
+
