@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"time"
@@ -22,8 +21,6 @@ func GetDistribution(distribution []float32) []float32 {
 // TODO change name, change name to the variable Distribution too
 func SelectBucket(distribution []float32) int {
 	random := random(0, 100)
-	//TODO take this out
-	fmt.Printf("Random %d", random)
 
 	bucket := 0
 	for float32(random) > distribution[bucket] {
