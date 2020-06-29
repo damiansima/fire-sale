@@ -1,46 +1,51 @@
 package engine
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/damiansima/fire-sale/util"
+	"github.com/storozhukBM/verifier"
 	"math/rand"
 	"time"
 )
 
-// Generate an slices where each item is the value bellow which is the Distribution of numbers from 0 to 100
-// TODO change name, change name to the variable Distribution too it is a probability Distribution
-func GetDistribution(distribution []float32) []float32 {
-	dist := make([]float32, len(distribution))
-	dist[0] = distribution[0] * 100
+// Provided a slice contanig values between 0.0:1.0 it generates buckets containing values between 0:100
+func BuildBuckets(distribution []float32) ([]float32, error) {
+	verify := verifier.New()
+	verify.That(distribution != nil, "distribution can't be nil")
+	verify.That(len(distribution) > 0, "distribution must not be empty")
+	verify.That(util.Sum(distribution) == 1, "distribution must add up 100")
+	if verify.GetError() != nil {
+		return nil, verify.GetError()
+	}
+
+	buckets := make([]float32, len(distribution))
+	buckets[0] = distribution[0] * 100
 	for i := 1; i < len(distribution); i++ {
-		dist[i] = dist[i-1] + distribution[i]*100
+		buckets[i] = buckets[i-1] + distribution[i]*100
 	}
-	log.Debugf("Building Distributions: Distribution %v -- Buckets %v", distribution, dist)
-	return dist
+	return buckets, nil
 }
 
-// TODO BUG distribution of 1 can not be 0
-// TODO change name, change name to the variable Distribution too
-func SelectBucket(distribution []float32) int {
-	random := random(0, 100)
+// It generates a value between 0:100 and it looks for the bucket containing the value generated
+// It returns the idx representing a bucket in of the bucket containing the value, -1 if the value was not found
+func SelectBucket(buckets []float32) int {
+	randomValue := generateRandomValue(0, 100)
+	return SelectDeterministicBucket(randomValue, buckets)
+}
 
+// It looks for the bucket containing the value sent as parameter
+// It returns the idx of the bucket containing the value, -1 if the value was not found
+func SelectDeterministicBucket(value int, buckets []float32) int {
 	bucket := 0
-	for float32(random) > distribution[bucket] {
+	for bucket < len(buckets) && float32(value) > buckets[bucket] {
 		bucket++
 	}
-	log.Debugf("Selecting bucket %d", bucket)
+	if bucket >= len(buckets) {
+		bucket = -1
+	}
 	return bucket
 }
 
-func SelectDeterministicBucket(number int,distribution []float32) int {
-	bucket := 0
-	for float32(number) > distribution[bucket] {
-		bucket++
-	}
-	log.Debugf("Selecting bucket %d", bucket)
-	return bucket
-}
-
-func random(min, max int) int {
+func generateRandomValue(min, max int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min) + min
 }

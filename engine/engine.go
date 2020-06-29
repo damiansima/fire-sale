@@ -61,7 +61,7 @@ type ReportResult struct {
 
 // AllocateJobs creates jobs and adds them to the jobs queue
 // It receives noOfJobs and testDurationMs, if the second is grated than 0 it takes precedences and keeps
-// pushing jobs during the defined period. If not the specified number of jobs will be created
+// pushing jobs during the defined period. If not the specified value of jobs will be created
 func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, jobs chan Job) {
 	log.Debugf("Allocating jobs ...")
 
@@ -236,7 +236,7 @@ func buildDistributionBuckets(scenarios []Scenario) []float32 {
 		scenarioDistributions[i] = scenarios[i].Distribution
 		// TODO distributions must sum up 1
 	}
-	distributions := GetDistribution(scenarioDistributions)
+	distributions, _ := BuildBuckets(scenarioDistributions)
 	return distributions
 }
 
