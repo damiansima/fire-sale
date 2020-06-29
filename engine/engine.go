@@ -81,7 +81,7 @@ func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond in
 	} else {
 		log.Debugf("Allocating [%d]job", noOfJobs)
 		for i := 0; i < noOfJobs; i++ {
-			allocateJob(i, selectScenario(distributions, scenarios).JobCreator, jobs)
+			allocateJob(i, selectDeterministicScenario(i, distributions, scenarios).JobCreator, jobs)
 		}
 		log.Debugf("Stop allocation")
 	}
@@ -191,6 +191,7 @@ func buildDistributionBuckets(scenarios []Scenario) []float32 {
 	scenarioDistributions := make([]float32, len(scenarios))
 	for i := 0; i < len(scenarios); i++ {
 		scenarioDistributions[i] = scenarios[i].Distribution
+		// TODO distributions must sum up 1
 	}
 	distributions := GetDistribution(scenarioDistributions)
 	return distributions
@@ -198,6 +199,12 @@ func buildDistributionBuckets(scenarios []Scenario) []float32 {
 
 func selectScenario(distributions []float32, scenarios []Scenario) Scenario {
 	scenario := scenarios[SelectBucket(distributions)]
+	log.Debugf("Selecting Scenario %s", scenario.Name)
+	return scenario
+}
+
+func selectDeterministicScenario(number int, distributions []float32, scenarios []Scenario) Scenario {
+	scenario := scenarios[SelectDeterministicBucket(number, distributions)]
 	log.Debugf("Selecting Scenario %s", scenario.Name)
 	return scenario
 }

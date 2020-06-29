@@ -18,12 +18,22 @@ func GetDistribution(distribution []float32) []float32 {
 	return dist
 }
 
+// TODO BUG distribution of 1 can not be 0
 // TODO change name, change name to the variable Distribution too
 func SelectBucket(distribution []float32) int {
 	random := random(0, 100)
 
 	bucket := 0
 	for float32(random) > distribution[bucket] {
+		bucket++
+	}
+	log.Debugf("Selecting bucket %d", bucket)
+	return bucket
+}
+
+func SelectDeterministicBucket(number int,distribution []float32) int {
+	bucket := 0
+	for float32(number) > distribution[bucket] {
 		bucket++
 	}
 	log.Debugf("Selecting bucket %d", bucket)

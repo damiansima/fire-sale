@@ -36,10 +36,11 @@ func defineScenarios() []engine.Scenario {
 
 	s0 := engine.Scenario{
 		Name:         "Basic Scenario 0",
-		Distribution: 0.8,
+		Distribution: 1,
 		JobCreator: func(id int) engine.Job {
 			var method string
 			var basePath string
+			var timeout = defaultTimeout
 			headers := make(map[string]string)
 			var bodyBuffer *bytes.Buffer
 
@@ -47,28 +48,11 @@ func defineScenarios() []engine.Scenario {
 			bodyBuffer = bytes.NewBuffer([]byte(""))
 			basePath = "https://www.infobae.com"
 
-			return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: defaultTimeout, AllowConnectionReuse: true}
+			return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: timeout, AllowConnectionReuse: true}
 		},
 	}
 
-	s1 := engine.Scenario{
-		Name:         "Basic Scenario 1",
-		Distribution: 0.2,
-		JobCreator: func(id int) engine.Job {
-			var method string
-			var basePath string
-			headers := make(map[string]string)
-			var bodyBuffer *bytes.Buffer
-
-			method = "GET"
-			bodyBuffer = bytes.NewBuffer([]byte(""))
-			basePath = "https://www.infobae.com"
-
-			return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: defaultTimeout, AllowConnectionReuse: true}
-		},
-	}
-
-	scenarios = append(scenarios, s0, s1)
+	scenarios = append(scenarios, s0)
 
 	return scenarios
 }
@@ -110,5 +94,3 @@ func run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedP
 
 	log.Infof("Execution toke [%s]", time.Now().Sub(start))
 }
-
-

@@ -28,17 +28,16 @@ By unit of time
 |Force new connection (not reuse) per go routine  | [DONE] | to simulate different users|
 |Add option to job to reuse http connection between workers| [DONE] ||
 |Multiple runs per ACTUAL RUN| [DONE] ||
+|Define timeout per request| [DONE] ||
 ### PENDING
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-|Multiple scenario bug| [PENDING] | if no distribution assume random|
-|Multiple scenario bug| [PENDING] | distribution does not respect values|
-|Define timeout per request| [PENDING] ||
+|Multiple scenario | [PENDING] | report by job of request and percentiles|
+|Tests dude  | [PENDING] ||
+|Deal with TODOs  | [PENDING] ||
 |Speed up to a desired number of request vs concurrent users  | [PENDING] ||
 |Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|
-|Deal with TODOs  | [PENDING] ||
 |Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
-|Tests dude  | [PENDING] ||
 |Warm up request|[PENDING]||
 |Value generators|[PENDING]| to randomize request for those parameters that can allow for auto generation between min and max|
 |Input files for request parametrization|[PENDING]||
