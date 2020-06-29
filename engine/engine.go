@@ -180,9 +180,10 @@ func ConsumeResults(results chan Result, done chan bool) {
 		reportResult, ok := scenarioResults[result.job.ScenarioId]
 		if !ok {
 			reportResult = ReportResult{
-				RequestCount: 1,
+				RequestCount: 0,
 			}
 		}
+		reportResult.RequestCount++
 		reportResult.DurationSum += elapsedOverall
 		reportResult.DurationRequestSum += actualServerTime
 		reportResult.Td.Add(actualServerTime.Seconds(), 1)
@@ -203,9 +204,9 @@ func ConsumeResults(results chan Result, done chan bool) {
 	// TODO this needs to me moved to a report module
 	for key, reportResult := range scenarioResults {
 		log.Infof("Scenario [%d]", key)
-		log.Infof("Success [%f%%] - Fail [%f%%]", float32((reportResult.SuccessCount*100)/count), float32(((reportResult.TimeoutCount+reportResult.FailCount)*100)/reportResult.RequestCount))
-		log.Infof("Request total [%d] average [%s] ", count, time.Duration(reportResult.DurationSum.Nanoseconds()/reportResult.RequestCount))
-		log.Infof("Request total [%d] average [%s] ", count, time.Duration(reportResult.DurationRequestSum.Nanoseconds()/reportResult.RequestCount))
+		log.Infof("Success [%f%%] - Fail [%f%%]", float32((reportResult.SuccessCount*100)/reportResult.RequestCount), float32(((reportResult.TimeoutCount+reportResult.FailCount)*100)/reportResult.RequestCount))
+		log.Infof("Request total [%d] average [%s] ", reportResult.RequestCount, time.Duration(reportResult.DurationSum.Nanoseconds()/reportResult.RequestCount))
+		log.Infof("Request total [%d] average [%s] ", reportResult.RequestCount, time.Duration(reportResult.DurationRequestSum.Nanoseconds()/reportResult.RequestCount))
 		log.Infof("99th %fms", reportResult.Td.Quantile(0.99)/time.Millisecond.Seconds())
 		log.Infof("90th %fms", reportResult.Td.Quantile(0.9)/time.Millisecond.Seconds())
 		log.Infof("75th %fms", reportResult.Td.Quantile(0.75)/time.Millisecond.Seconds())
