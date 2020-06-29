@@ -22,6 +22,7 @@ var DefaultRampUp RampUp = RampUp{Step: 1, Time: 0}
 
 // TODO this probably needs a new name
 type Scenario struct {
+	Id           int
 	Name         string
 	Distribution float32
 	JobCreator   func(id int) Job
@@ -30,6 +31,7 @@ type Scenario struct {
 // TODO this probably needs a new name
 type Job struct {
 	Id                   int
+	ScenarioId           int
 	Method               string
 	Url                  string
 	ReqBody              io.Reader
@@ -45,6 +47,16 @@ type Result struct {
 	Status  int
 	Timeout bool
 	job     Job
+}
+
+type ReportResult struct {
+	RequestCount       int64
+	FailCount          int64
+	SuccessCount       int64
+	TimeoutCount       int64
+	Td                 tdigest.TDigest
+	DurationSum        time.Duration
+	DurationRequestSum time.Duration
 }
 
 // AllocateJobs creates jobs and adds them to the jobs queue
@@ -126,6 +138,8 @@ func ConsumeResults(results chan Result, done chan bool) {
 	var successCount int64
 	var timeoutCount int64
 
+	scenarioResults := make(map[int]ReportResult)
+
 	// TODO THIS SHOULD BE ACCUMULATED FOR REPORT PURPOSES
 	var last int64
 	go func() {
@@ -162,15 +176,43 @@ func ConsumeResults(results chan Result, done chan bool) {
 		td.Add(actualServerTime.Seconds(), 1)
 
 		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%t]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
+
+		reportResult, ok := scenarioResults[result.job.ScenarioId]
+		if !ok {
+			reportResult = ReportResult{
+				RequestCount: 1,
+			}
+		}
+		reportResult.DurationSum += elapsedOverall
+		reportResult.DurationRequestSum += actualServerTime
+		reportResult.Td.Add(actualServerTime.Seconds(), 1)
+
 		if result.Timeout {
 			timeoutCount++
+			reportResult.TimeoutCount++
 		} else if result.Status > 0 && result.Status < 300 {
 			successCount++
+			reportResult.SuccessCount++
 		} else {
 			failCount++
+			reportResult.FailCount++
 		}
+		scenarioResults[result.job.ScenarioId] = reportResult
 	}
+
 	// TODO this needs to me moved to a report module
+	for key, reportResult := range scenarioResults {
+		log.Infof("Scenario [%d]", key)
+		log.Infof("Success [%f%%] - Fail [%f%%]", float32((reportResult.SuccessCount*100)/count), float32(((reportResult.TimeoutCount+reportResult.FailCount)*100)/reportResult.RequestCount))
+		log.Infof("Request total [%d] average [%s] ", count, time.Duration(reportResult.DurationSum.Nanoseconds()/reportResult.RequestCount))
+		log.Infof("Request total [%d] average [%s] ", count, time.Duration(reportResult.DurationRequestSum.Nanoseconds()/reportResult.RequestCount))
+		log.Infof("99th %fms", reportResult.Td.Quantile(0.99)/time.Millisecond.Seconds())
+		log.Infof("90th %fms", reportResult.Td.Quantile(0.9)/time.Millisecond.Seconds())
+		log.Infof("75th %fms", reportResult.Td.Quantile(0.75)/time.Millisecond.Seconds())
+		log.Infof("50th %fms", reportResult.Td.Quantile(0.5)/time.Millisecond.Seconds())
+		log.Infof("--------------------------------------------------------")
+	}
+	log.Infof("********************************************************")
 	// TODO BUG: Fail percentage is not accurate
 	log.Infof("Success [%f%%] - Fail [%f%%]", float32((successCount*100)/count), float32(((timeoutCount+failCount)*100)/count))
 	// TODO average time should taken from configuration with/without latency

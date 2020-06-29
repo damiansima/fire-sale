@@ -29,11 +29,12 @@ By unit of time
 |Add option to job to reuse http connection between workers| [DONE] ||
 |Multiple runs per ACTUAL RUN| [DONE] ||
 |Define timeout per request| [DONE] ||
+|Multiple scenario | [DONE] | report by job of request and percentiles|
 ### PENDING
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-|Multiple scenario | [PENDING] | report by job of request and percentiles|
 |Tests dude  | [PENDING] ||
+|Add build to github  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
 |Speed up to a desired number of request vs concurrent users  | [PENDING] ||
 |Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|

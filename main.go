@@ -33,8 +33,10 @@ func main() {
 
 func defineScenarios() []engine.Scenario {
 	var scenarios []engine.Scenario
-
+	// TODO define a unique way to id scenarios
+	s0Id := 0
 	s0 := engine.Scenario{
+		Id:           s0Id,
 		Name:         "Basic Scenario 0",
 		Distribution: 1,
 		JobCreator: func(id int) engine.Job {
@@ -48,7 +50,7 @@ func defineScenarios() []engine.Scenario {
 			bodyBuffer = bytes.NewBuffer([]byte(""))
 			basePath = "https://www.infobae.com"
 
-			return engine.Job{Id: id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: timeout, AllowConnectionReuse: true}
+			return engine.Job{Id: id, ScenarioId: s0Id, Method: method, Url: basePath, ReqBody: bodyBuffer, Headers: headers, Timeout: timeout, AllowConnectionReuse: true}
 		},
 	}
 
