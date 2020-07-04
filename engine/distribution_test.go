@@ -1,6 +1,7 @@
-package engine
+package engine_test
 
 import (
+	"github.com/damiansima/fire-sale/engine"
 	"github.com/damiansima/fire-sale/util"
 	"testing"
 )
@@ -20,7 +21,7 @@ func TestGetDistribution(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			if actual, err := BuildBuckets(scenario.distribution); err != nil && util.Equals(actual, scenario.expected) {
+			if actual, err := engine.BuildBuckets(scenario.distribution); err != nil && util.Equals(actual, scenario.expected) {
 				t.Errorf("SelectBucket() = %v, expected %v", actual, scenario.expected)
 			}
 		})
@@ -38,7 +39,7 @@ func TestSelectBucket(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			if actual := SelectBucket(scenario.buckets); actual != scenario.expected {
+			if actual := engine.SelectBucket(scenario.buckets); actual != scenario.expected {
 				t.Errorf("SelectBucket() = %v, expected %v", actual, scenario.expected)
 			}
 		})
@@ -64,7 +65,7 @@ func TestSelectDeterministicBucket(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			if actual := SelectDeterministicBucket(scenario.value, scenario.distribution); actual != scenario.expected {
+			if actual := engine.SelectDeterministicBucket(scenario.value, scenario.distribution); actual != scenario.expected {
 				t.Errorf("SelectDeterministicBucket() = %v, expected %v", actual, scenario.expected)
 			}
 		})

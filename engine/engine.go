@@ -40,7 +40,7 @@ type Job struct {
 	AllowConnectionReuse bool
 }
 type Result struct {
-	// TODO start and end are part of the trace really remove it
+	// TODO start and end are part of the Trace really remove it
 	Start   time.Time
 	End     time.Time
 	Trace   Trace
@@ -295,7 +295,7 @@ func doRequest(method, url string, reqBody io.Reader, headers map[string]string,
 	client.Timeout = timeout
 	log.Tracef("Defined timout %s", client.Timeout)
 
-	traceableTransport := &TraceableTransport{trace: &Trace{}}
+	traceableTransport := &TraceableTransport{Trace: &Trace{}}
 	trace := NewTrace(*traceableTransport)
 	request = request.WithContext(httptrace.WithClientTrace(request.Context(), trace))
 
@@ -309,7 +309,7 @@ func doRequest(method, url string, reqBody io.Reader, headers map[string]string,
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			isTimeOut = true
 		}
-		return Result{Start: start, End: end, Timeout: isTimeOut, Trace: *traceableTransport.trace}
+		return Result{Start: start, End: end, Timeout: isTimeOut, Trace: *traceableTransport.Trace}
 	}
 
 	defer resp.Body.Close()
@@ -321,7 +321,7 @@ func doRequest(method, url string, reqBody io.Reader, headers map[string]string,
 		log.Tracef(string(body))
 	}
 
-	return Result{Start: start, End: end, Status: resp.StatusCode, Trace: *traceableTransport.trace}
+	return Result{Start: start, End: end, Status: resp.StatusCode, Trace: *traceableTransport.Trace}
 }
 
 // This method ensures a new instance of the Transport struct
