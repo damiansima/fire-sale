@@ -3,6 +3,7 @@ package engine_test
 import (
 	"github.com/damiansima/fire-sale/engine"
 	"github.com/damiansima/fire-sale/util"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -11,19 +12,27 @@ func TestGetDistribution(t *testing.T) {
 		name         string
 		distribution []float32
 		expected     []float32
+		shouldFail   bool
 	}{
-		{"100%", []float32{0.1}, []float32{100}},
-		{"50%", []float32{0.5, 0.5}, []float32{50, 100}},
-		{"25%", []float32{0.25, 0.25, 0.25, 0.25}, []float32{25, 50, 75, 100}},
-		{"20%", []float32{0.2, 0.2, 0.2, 0.2, 0.2}, []float32{20, 40, 60, 80, 100}},
+		{"100%", []float32{1}, []float32{100}, false},
+		{"50%", []float32{0.5, 0.5}, []float32{50, 100}, false},
+		{"25%", []float32{0.25, 0.25, 0.25, 0.25}, []float32{25, 50, 75, 100}, false},
+		{"20%", []float32{0.2, 0.2, 0.2, 0.2, 0.2}, []float32{20, 40, 60, 80, 100}, false},
+		{"Nil distribution should fail", nil, []float32{}, true},
+		{"Empty distribution should fail", []float32{}, []float32{}, true},
+		{"Over 1 distribution should fail", []float32{0.5, 0.5, 0.5}, []float32{}, true},
 	}
-	// TODO add scenarios were we return errors
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			if actual, err := engine.BuildBuckets(scenario.distribution); err != nil && util.Equals(actual, scenario.expected) {
-				t.Errorf("SelectBucket() = %v, expected %v", actual, scenario.expected)
+			actual, err := engine.BuildBuckets(scenario.distribution)
+			if scenario.shouldFail {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
 			}
+			assert.True(t, util.Equals(scenario.expected, actual))
+
 		})
 	}
 }
@@ -39,9 +48,7 @@ func TestSelectBucket(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			if actual := engine.SelectBucket(scenario.buckets); actual != scenario.expected {
-				t.Errorf("SelectBucket() = %v, expected %v", actual, scenario.expected)
-			}
+			assert.Equal(t, scenario.expected, engine.SelectBucket(scenario.buckets))
 		})
 	}
 }
@@ -65,9 +72,7 @@ func TestSelectDeterministicBucket(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			if actual := engine.SelectDeterministicBucket(scenario.value, scenario.distribution); actual != scenario.expected {
-				t.Errorf("SelectDeterministicBucket() = %v, expected %v", actual, scenario.expected)
-			}
+			assert.Equal(t, scenario.expected, engine.SelectDeterministicBucket(scenario.value, scenario.distribution))
 		})
 	}
 }
