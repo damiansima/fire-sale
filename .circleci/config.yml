@@ -5,5 +5,15 @@ jobs:
       - image: circleci/golang:1.12
     steps:
       - checkout
-      - run: go get -v -d ./...
-      - run: go test -v -cover ./...
+      - run: go build
+      - run:
+          name: "Create a temp directory for artifacts"
+          command: |
+            mkdir -p /tmp/artifacts
+      - run:
+          command: |
+            go test -coverprofile=c.out
+            go tool cover -html=c.out -o coverage.html
+            mv coverage.html /tmp/artifacts
+      - store_artifacts:
+          path: /tmp/artifacts
