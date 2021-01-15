@@ -209,6 +209,82 @@ It returns and string by selecting a random item from the list sent as parameter
 
 It returns and string by selecting a random item from the file sent as parameter. Each line in the file is an item.
 
+# REPORTS
+**Note**: It currently only prints reports in the console
+```
+******************************************************** 
+*                      Results                         * 
+******************************************************** 
+======================================================== 
+=                     Scenarios                        = 
+======================================================== 
+Scenario - Get Retailers Products 50 to 100 - ID: [3] 
+Success [100.000000%] - Fail [0.000000%]     
+Request average [282.136205ms]               
+Request total [2103] average [1.359391885s]  
+99th 1035.738501ms                           
+90th 298.641789ms                            
+75th 272.957098ms                            
+50th 263.477751ms                            
+-------------------------------------------------------- 
+Scenario - Get Retailers 0 to 30 - ID: [0]   
+Success [100.000000%] - Fail [0.000000%]     
+Request average [27.765715ms]                
+Request total [2368] average [1.088025691s]  
+99th 380.675666ms                            
+90th 44.338142ms                             
+75th 20.708892ms                             
+50th 11.321021ms                             
+-------------------------------------------------------- 
+Scenario - Get Retailers 50 to 100 - ID: [1] 
+Success [100.000000%] - Fail [0.000000%]     
+Request average [29.725625ms]                
+Request total [2265] average [1.086346552s]  
+99th 417.755235ms                            
+90th 47.587332ms                             
+75th 20.801271ms                             
+50th 11.725982ms                             
+-------------------------------------------------------- 
+Scenario - Get Retailers Products 0 to 50 - ID: [2] 
+Success [100.000000%] - Fail [0.000000%]     
+Request average [30.708097ms]                
+Request total [2187] average [1.094739772s]  
+99th 428.276235ms                            
+90th 50.205013ms                             
+75th 19.797776ms                             
+50th 11.357867ms                             
+-------------------------------------------------------- 
+======================================================== 
+=                     Overall                          = 
+======================================================== 
+Success [100.000000%] - Fail [0.000000%]     
+Request average [88.935201ms]                
+Request total [8923] average [1.153201479s]  
+99th 494.090542ms                            
+90th 266.930053ms                            
+75th 215.387629ms                            
+50th 15.555311ms                             
+Timeout [0] - Fail [0] - Success [8923]      
+Execution toke [3m1.856963175s]              
+[¡¡¡SOLD!!!]                     
+```
+The report will print statistics per each scenario, and an overall result. 
+In each section it will show the following: 
+```
+Scenario - Get Retailers Products 50 to 100 - ID: [3] 
+Success [100.000000%] - Fail [0.000000%]     
+Request average [282.136205ms]               
+Request total [2103] average [1.359391885s]  
+99th 1035.738501ms                           
+90th 298.641789ms                            
+75th 272.957098ms                            
+50th 263.477751ms                            
+```
+- Name: taken from the DSL
+- Success & Fail: a percentage of all the request that where successful, and those which didn't. Any response whose status code is higher than 300 is considered a fail.
+- Request average: average time per request (not quite informative TBH)
+- Request total: total number of request done for this scenario
+- Request time percentiles: ..... 
 
 ## TODO LIST 
 ### DONE
