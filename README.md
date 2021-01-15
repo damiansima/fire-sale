@@ -7,11 +7,6 @@ FireSale is a performance testing tool designed to be ligtwayth and fast.
 Its simple DSL allows you to generate load and spike like traffic in order 
 to stress your services in a way that reflects your production traffic. 
 
-By unit of time 
-* Spike traffic
-* Sustained traffic
-* Paced traffic
-
 ## REQUIREMENTS
 It requires GO 1.15
 
