@@ -221,6 +221,7 @@ func newDefaultTransportWithTLSSupport(clientCertFile string, clientKeyFile stri
 
 func buildTlsConfig(clientCertFile string, clientKeyFile string, caCertFile string) tls.Config {
 	var tlsConfig tls.Config
+	// TODO WE MAY not be releasing the files properly after reading it
 	if "" != clientCertFile && "" != clientKeyFile && caCertFile != "" {
 		cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
 		if err != nil {
