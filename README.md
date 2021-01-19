@@ -31,7 +31,7 @@ $ ./fire-sale
 ```
 
 # DSL 
-The goals behind FireSale is to make it spper simple to use. 
+The goals behind FireSale is to make it super simple to use. 
 With that in mind we've come up with the following DSL which could be fed to the engine in order to run your tests:
 The DSL describes stress tests in which you define a traffic profile you want to reproduce. 
 It's composed by the following sections: 
