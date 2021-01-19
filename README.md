@@ -3,7 +3,7 @@
 
 ``Everything must GO(lang)``
 
-FireSale is a performance testing tool designed to be ligtwayth and fast. 
+FireSale is a performance testing tool designed to be lightweight and fast. 
 Its simple DSL allows you to generate load and spike like traffic in order 
 to stress your services in a way that reflects your production traffic. 
 
@@ -31,10 +31,10 @@ $ ./fire-sale
 ```
 
 # DSL 
-The goals behind FireSale is to make it supper simple to use. 
-With that in mind we've come up with the following DSL which could be feed to the engine in order to run your tests:
-The DSL describe a stress tests in which you define a traffic profile you want to reproduce. 
-It's composed  by the following sections: 
+The goals behind FireSale is to make it spper simple to use. 
+With that in mind we've come up with the following DSL which could be fed to the engine in order to run your tests:
+The DSL describes stress tests in which you define a traffic profile you want to reproduce. 
+It's composed by the following sections: 
 * Basic
 * Parameters
 * Certificates
@@ -73,7 +73,7 @@ scenarios:
 ```
 
 ## DSL :: Basic
-This section it's just the root it describes the:
+This section is just the root, it describes the:
  - name 
  - host
 
@@ -81,10 +81,10 @@ This section it's just the root it describes the:
 name: da stress test
 host: https://www.fake-host.com
 ``` 
-The host will be used as the base to all the HTTP requests
+The host will be used as the base of all the HTTP requests
 
 ## DSL :: Parameters
-This section describes the amount of traffic you want to generate and how to get there
+This section describes the amount of traffic you want to generate and how to get there:
 ```
   parameters:
     noofrequest: 10
@@ -95,29 +95,29 @@ This section describes the amount of traffic you want to generate and how to get
       step: 1
       time: 0
 ```
-- **noofrequest**: It used when you just want to generate an specific number of hits. The run will finish after executing all the request defined.
-- **testduration**: It the instructs the tool to run for a period of time measured in  `minutes`. If present it takes precedence over `noofrequest`.
+- **noofrequest**: It's used when you just want to generate an specific number of hits. The run will finish after executing all the requests defined.
+- **testduration**: It instructs the tool to run for a period of time measured in  `minutes`. If present it takes precedence over `noofrequest`.
 - **workers**: It defines the number of concurrent users you want to simulate.
-- **maxrequest**: It the defines an overall max to the number of request generated per second.  If `0` there is no limitation, if 10 it'll only generate 10 request per second regardless the number of workers.
+- **maxrequest**: It defines an overall max to the number of request generated per second.  If `0` there is no limitation, if `10` it'll only generate 10 request per second regardless of the number of workers.
 
 ### DSL :: Parameters :: Ramp Up
-This section defines how to maximum number of workers gets fire up. 
+This section defines how the maximum number of workers is reached. 
 ```
   parameters:
     rampup:
       step: 1
       time: 0
 ```
-If not defined it will spin up all workers at the same time generating a traffic profile that will look like an spike.
+If not defined it will spin up all workers at the same time generating a traffic profile that will look like a spike.
 Normally you want to smooth the curve of traffic to simulate actual traffic.
-- **time**: It the defines the amount of minutes you want to leave between the beginin of the run up until reach the maximum number of workers running
-- **step**: It takes the defined time and split it by this number generating and scalonated traffic. The larger this number the smoother the traffic curve. 
+- **time**: It defines the amount of minutes you want to wait between the beginning of the execution up until reaching the maximum number of workers running
+- **step**: It takes the defined time and splits it by this number generating and scalonated traffic. The larger this number the smoother the traffic curve. 
 
-*Note*: if not provided the default ram up is step:1 , time:0 
+*Note*: if not provided the default ram up is `step:1 , time:0` 
  
 ## DSL :: Certificates
 FireSale supports the usage of key/cert files for when you need to hit services behind TSL. 
-If present the bellow section will load the certs and use it for all scenarios. As a general part of the file it will use them for all `scenarios`  
+If present the below section will load the certs and use it for all scenarios. As a general part of the file it will use them for all `scenarios`  
 ```
 certificates:
   clientkeyfile:  /path/to/your-key-file.key
@@ -126,7 +126,7 @@ certificates:
 ```
 
 *Note:* if you do not have a pem file for the CA file just point to you *.crt
-*Note:* for easy of use, by default it support self signed certificates by skiping insecure verifications
+*Note:* for ease of use, by default it support self signed certificates by skipping insecure verifications
 
 ## DSL :: Scenarios
 The `scenarios` is where you describe the actual HTTP requests to be made. 
@@ -150,13 +150,13 @@ scenarios:
       body: {id:123, value:'some value'}  
 ```
 
-As you can see it's an array and you can define as many as require.
+As you can see it's an array and you can define as many as required.
 
 - **name**: It defines the name of the test used for reporting purposes.
-- **timeout**: It defines the time out for this especifc type of request. If -1 it will not timeout. If it timeout it'll be reported.
+- **timeout**: It defines the timeout for this specifc type of request. If `-1` it will not timeout. If it times out it'll be reported.
 - **method**: It describles the HTTP method to be used it supports the same valid methods as http.request Go package.
 - **path**: It describes the path to hit.
-- **headers**: It's a key value map with the headers to be sent.
+- **headers**: It's a key-value map with the headers to be sent.
 - **body**: The body to be sent.
 
 ## DSL :: Scenarios :: Distribution          
@@ -166,21 +166,21 @@ This part deserves its own section.
 ``` 
 The distribution allows you to assign a percentage value from `0` to `1`.
 The engine will randomly select a scenario to be run each time. If you only have one scenario with a distribution of 1 it will then only run that scenario. 
-But if you have two scenarios you can ask the engine to distribute the runs evenly, that's 50/50, or you can ask it to do 70/30.
+But if you have two scenarios you can ask the engine to distribute the executions evenly, that's 50/50, or you can ask it to do 70/30.
 
-This feature allows you to, in one execution, replicate complex traffic profiles as ussully your services exposed a number of endpoints but not all of them are hit in the same proportion.  With this you can stress your service and more realistic conditions.  
+This feature allows you to, in one execution, replicate complex traffic profiles as usually your services expose a number of endpoints but not all of them are hit in the same proportion. With this you can stress your service and more realistic conditions.  
 
 *Note*: The sum of the distributions of all scenarios must add up to `1` or  the execution will fail.
 
 ### DSL :: Value Generators
-There are a number of functions you can use to generated values randomly. 
-The goal of it is define just one scenario and allow the engine to select in each request a random value in order to replicate a more realistic use case. 
+There are a number of functions you can use to generate values randomly. 
+The goal of it is to define just one scenario and allow the engine to select in each request a random value in order to replicate a more realistic use case. 
 This functions can be used in the following sections of the `DSL`: 
 * host
 * path
 * body 
 
-A function in the DSL is place holded by two curly braces like so `{{` & `}}`: 
+A function in the DSL is placeholded by two curly braces like so `{{` & `}}`: 
 ```
 path: /?id={{RandInRange(0,11)}}
 ```
