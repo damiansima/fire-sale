@@ -40,6 +40,8 @@ It's composed by the following sections:
 * Certificates
 * Scenarios
 
+*Note*: It supports YAML & JSON files.
+
 ```
 name: da stress test
 host: https://www.fake-host.com
@@ -286,6 +288,52 @@ Request total [2103] average [1.359391885s]
 - Request total: total number of request done for this scenario
 - Request time percentiles: ..... 
 
+
+## DSL :: JSON Example 
+```
+{
+  "Name": "da stress test",
+  "Host": "https://www.fake-host.com",
+  "Parameters": {
+    "NoOfRequest": 10,
+    "TestDuration": 0,
+    "Workers": 1,
+    "MaxRequest": 0,
+    "RampUp": {
+      "Step": 1,
+      "Time": 0
+    }
+  },
+  "Certificates": {
+    "ClientCertFile": "/path/to/your-cert-file.crt",
+    "ClientKeyFile": "/path/to/your-key-file.key",
+    "CaCertFile": "/path/to/your-ca-file.crt"
+  },
+  "Scenarios": [
+    {
+      "Name": "First endpoint",
+      "Distribution": 0.7,
+      "Timeout": -1,
+      "Method": "GET",
+      "Path": "/",
+      "Headers": {
+        "user-agent": "fire-sale/0.0.1"
+      },
+    },
+    {
+      "Name": "Another endpoint",
+      "Distribution": 0.3,
+      "Timeout": -1,
+      "Method": "GET",
+      "Path": "/another-endpoint",
+      "Headers": {
+        "user-agent": "fire-sale/0.0.1"
+      },
+    }
+  ]
+} 
+
+```
 ## TODO LIST 
 ### DONE
 | **Feature** | **Status** | *Notes* |
