@@ -60,11 +60,11 @@ func ParseConfiguration(configPath string) Configuration {
 
 	ext := path.Ext(configPath)
 	if ext == ".yml" || ext == ".yaml" {
-		log.Debug("Parsing yml|yaml file: %s",configPath)
+		log.Debugf("Parsing yml|yaml file: %s",configPath)
 		err = yaml.Unmarshal(cfBytes, &configuration)
 	}
 	if ext == ".json" {
-		log.Debug("Parsing .json file: %s",configPath)
+		log.Debugf("Parsing .json file: %s",configPath)
 		err = json.Unmarshal(cfBytes, &configuration)
 	}
 	if err != nil {
