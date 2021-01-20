@@ -1,5 +1,6 @@
 # FIRE SALE
 [![CircleCI](https://circleci.com/gh/damiansima/fire-sale.svg?style=shield&circle-token=e2f5b5b9357eb8cc430df5619e92925502ea606f)](<https://app.circleci.com/pipelines/github/damiansima/fire-sale>)
+[![license](http://img.shields.io/badge/license-Apache%20v2-orange.svg)](https://raw.githubusercontent.com/master/LICENSE)
 
 ``Everything must GO(lang)``
 
