@@ -2,10 +2,12 @@ package dsl
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/damiansima/fire-sale/engine"
 	"github.com/damiansima/fire-sale/processor"
 	"io/ioutil"
 	"os"
+	"path"
 	"time"
 )
 
@@ -55,7 +57,16 @@ func ParseConfiguration(configPath string) Configuration {
 	cfBytes, _ := ioutil.ReadAll(configFile)
 
 	var configuration Configuration
-	err = yaml.Unmarshal(cfBytes, &configuration)
+
+	ext := path.Ext(configPath)
+	if ext == ".yml" || ext == ".yaml" {
+		log.Debug("Parsing yml|yaml file: %s",configPath)
+		err = yaml.Unmarshal(cfBytes, &configuration)
+	}
+	if ext == ".json" {
+		log.Debug("Parsing .json file: %s",configPath)
+		err = json.Unmarshal(cfBytes, &configuration)
+	}
 	if err != nil {
 		panic(err)
 	}
