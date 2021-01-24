@@ -26,9 +26,13 @@ For usage options just type:
 ```
 $ ./fire-sale
   -config string
-    	 Path to the test-configuration.yml
+    	Path to the test-configuration.yml
   -log string
-    	 Define the log level [panic|fatal|error|warn|info|debug|trace] (default "info")
+    	Define the log level [panic|fatal|error|warn|info|debug|trace] (default "info")
+  -report-path string
+    	Define the report file path. If not provided it'll be printed to stdout
+  -report-type string
+    	Define the report type [std|json] (default "std")
 ```
 
 # DSL 
@@ -360,15 +364,14 @@ Request total [2103] average [1.359391885s]
 |Value generators|[DONE]| to randomize request for those parameters that can allow for auto generation between min and max|
 |Certificates handling  | [DONE] | Support for key/cert and PEM files |
 |Command line |[DONE]| |
+|Reporting |[DONE]| Different type of output reports|
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
 |Warm up request|[PENDING]||
-|Reporting |[PENDING]| Different type of output reports|
 |Tests dude  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
-|Reporting |[PENDING]| Printers Inject printers by configuration|
 |Reporting - As a module|[PENDING]| Request through time, percentiles through time, latency|
 |Reporting - Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|
 |Auto Generation of DSL  |[PENDING]| Swagger Scaffolding|
