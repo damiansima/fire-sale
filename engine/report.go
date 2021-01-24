@@ -75,7 +75,7 @@ func buildScenarioReportLines(reportLines []string, scenarioResult ScenarioResul
 	return reportLines
 }
 
-func printResults(report Report, reportType, reportFilePath string) {
+func printReport(report Report, reportType, reportFilePath string) {
 	var jsonReport []byte
 	var reportLines []string
 

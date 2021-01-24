@@ -73,15 +73,16 @@ func Run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedP
 	go AllocateJobs(noOfRequest, testDuration, maxSpeedPerSecond, scenarios, jobs)
 
 	done := make(chan bool)
-	go ConsumeResults(results, done, reportType, reportFilePath)
+	report := Report{}
+	go ConsumeResults(results, done, &report)
 
 	if (RampUp{}) == rampUp {
 		rampUp = DefaultRampUp
 	}
-
 	runWorkers(noOfWorkers, rampUp, certificates, jobs, results)
 	<-done
 
+	printReport(report, reportType, reportFilePath)
 	log.Infof("Execution toke [%s]", time.Now().Sub(start))
 }
 

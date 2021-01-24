@@ -365,6 +365,7 @@ Request total [2103] average [1.359391885s]
 |Certificates handling  | [DONE] | Support for key/cert and PEM files |
 |Command line |[DONE]| |
 |Reporting |[DONE]| Different type of output reports|
+|Reporting - As a module|[DONE]| |
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
@@ -372,7 +373,6 @@ Request total [2103] average [1.359391885s]
 |Warm up request|[PENDING]||
 |Tests dude  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
-|Reporting - As a module|[PENDING]| Request through time, percentiles through time, latency|
 |Reporting - Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|
 |Auto Generation of DSL  |[PENDING]| Swagger Scaffolding|
 |Events  |[PENDING]| Generate load by creating events|
