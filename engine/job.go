@@ -18,12 +18,13 @@ type Job struct {
 	Headers              map[string]string
 	Timeout              time.Duration
 	AllowConnectionReuse bool
+	IsWarmup             bool
 }
 
 // AllocateJobs creates jobs and adds them to the jobs queue
 // It receives noOfJobs and testDurationMs, if the second is grated than 0 it takes precedences and keeps
 // pushing jobs during the defined period. If not the specified value of jobs will be created
-func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, jobs chan Job) error {
+func AllocateJobs(noOfJobs int,noOfWarmupJobs int, testDuration time.Duration, warmupDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, jobs chan Job) error {
 	log.Debugf("Allocating jobs ...")
 
 	distributionsBuckets, err := buildDistributionBuckets(scenarios)
@@ -33,6 +34,16 @@ func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond in
 	}
 
 	if testDuration > 0 {
+		shouldWarmupStop := make(chan bool)
+		go func() {
+			if warmupDuration != 0 {
+				log.Debugf("Starting warmup for [%d]ms", warmupDuration)
+				<-time.After(warmupDuration)
+				log.Debugf("Warmup Done")
+			}
+			shouldWarmupStop <- true
+		}()
+
 		shouldStop := make(chan bool)
 		go func() {
 			log.Debugf("Allocating for [%d]ms", testDuration)
@@ -40,9 +51,10 @@ func AllocateJobs(noOfJobs int, testDuration time.Duration, maxSpeedPerSecond in
 			log.Debugf("Stop allocation")
 			shouldStop <- true
 		}()
-		allocateJobsUntilDone(shouldStop, maxSpeedPerSecond, scenarios, distributionsBuckets, jobs)
+
+		allocateJobsUntilDone(shouldStop, shouldWarmupStop, maxSpeedPerSecond, scenarios, distributionsBuckets, jobs)
 	} else {
-		allocatePredefinedNumberOfJobs(noOfJobs, maxSpeedPerSecond, scenarios, distributionsBuckets, jobs)
+		allocatePredefinedNumberOfJobs(noOfJobs, noOfWarmupJobs, maxSpeedPerSecond, scenarios, distributionsBuckets, jobs)
 	}
 
 	close(jobs)
@@ -69,20 +81,23 @@ func buildDistributionBuckets(scenarios []Scenario) ([]float32, error) {
 	return distributions, nil
 }
 
-func allocateJobsUntilDone(shouldStop chan bool, maxSpeedPerSecond int, scenarios []Scenario, distributionsBuckets []float32, jobs chan Job) {
+func allocateJobsUntilDone(shouldStop chan bool, shouldWarmupStop chan bool, maxSpeedPerSecond int, scenarios []Scenario, distributionsBuckets []float32, jobs chan Job) {
+	isWarmup := true
 	for i := 0; ; {
 		select {
 		case <-shouldStop:
 			return
+		case <-shouldWarmupStop:
+			isWarmup = false
 		default:
 			if maxSpeedPerSecond > 0 {
 				for j := 0; j < maxSpeedPerSecond; j++ {
-					allocateJob(i, scenarios, distributionsBuckets, -1, jobs)
+					allocateJob(i, isWarmup, scenarios, distributionsBuckets, -1, jobs)
 					i++
 				}
 				time.Sleep(1 * time.Second)
 			} else {
-				allocateJob(i, scenarios, distributionsBuckets, -1, jobs)
+				allocateJob(i, isWarmup, scenarios, distributionsBuckets, -1, jobs)
 				i++
 			}
 		}
@@ -90,21 +105,39 @@ func allocateJobsUntilDone(shouldStop chan bool, maxSpeedPerSecond int, scenario
 	}
 }
 
-func allocatePredefinedNumberOfJobs(noOfJobs int, maxSpeedPerSecond int, scenarios []Scenario, distributionsBuckets []float32, jobs chan Job) {
+func allocatePredefinedNumberOfJobs(noOfJobs int, noOfWarmupJobs int, maxSpeedPerSecond int, scenarios []Scenario, distributionsBuckets []float32, jobs chan Job) {
 	log.Debugf("Allocating [%d]job", noOfJobs)
+	isWarmup := false
 	for i := 0; i < noOfJobs; {
+		if noOfWarmupJobs > 0 && noOfWarmupJobs > i {
+			isWarmup = true
+		} else {
+			isWarmup = false
+		}
 		if maxSpeedPerSecond > 0 {
 			for j := 0; j < maxSpeedPerSecond; j++ {
-				allocateJob(i, scenarios, distributionsBuckets, i, jobs)
+				allocateJob(i, isWarmup, scenarios, distributionsBuckets, i, jobs)
 				i++
 			}
 			time.Sleep(1 * time.Second)
 		} else {
-			allocateJob(i, scenarios, distributionsBuckets, i, jobs)
+			allocateJob(i, isWarmup, scenarios, distributionsBuckets, i, jobs)
 			i++
 		}
 	}
 	log.Debugf("Stop allocation")
+}
+
+func allocateJob(id int, isWarmup bool, scenarios []Scenario, distributionsBuckets []float32, bucketValue int, jobs chan Job) {
+	scenario, err := selectScenario(scenarios, distributionsBuckets, bucketValue)
+	if err != nil {
+		log.Errorf("Fail to select scenario to for job err: %v", err)
+	} else {
+		log.Debugf("Allocating job [%d]", id)
+		job := scenario.JobCreator(id)
+		job.IsWarmup = isWarmup
+		jobs <- job
+	}
 }
 
 func selectScenario(scenarios []Scenario, buckets []float32, bucketValue int) (Scenario, error) {
@@ -124,14 +157,4 @@ func selectScenario(scenarios []Scenario, buckets []float32, bucketValue int) (S
 	}
 	log.Debugf("Selecting Scenario %s", scenario.Name)
 	return scenario, nil
-}
-
-func allocateJob(id int, scenarios []Scenario, distributionsBuckets []float32, bucketValue int, jobs chan Job) {
-	scenario, err := selectScenario(scenarios, distributionsBuckets, bucketValue)
-	if err != nil {
-		log.Errorf("Fail to select scenario to for job err: %v", err)
-	} else {
-		log.Debugf("Allocating job [%d]", id)
-		jobs <- scenario.JobCreator(id)
-	}
 }

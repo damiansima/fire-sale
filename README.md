@@ -52,7 +52,9 @@ name: da stress test
 host: https://www.fake-host.com
 parameters:
   noofrequest: 10
+  noofwarmuprequest: 2
   testduration: 0
+  warmupduration: 0
   workers: 1
   maxrequest: 0
   rampup:
@@ -95,7 +97,9 @@ This section describes the amount of traffic you want to generate and how to get
 ```
   parameters:
     noofrequest: 10
+    noofwarmuprequest: 2
     testduration: 0
+    warmupduration: 0
     workers: 1
     maxrequest: 0
     rampup:
@@ -103,7 +107,9 @@ This section describes the amount of traffic you want to generate and how to get
       time: 0
 ```
 - **noofrequest**: It's used when you just want to generate an specific number of hits. The run will finish after executing all the requests defined.
+- **noofwarmuprequest**: Indicate the number of request done in order to warmup the service. These request will be accounted differently. 
 - **testduration**: It instructs the tool to run for a period of time measured in  `minutes`. If present it takes precedence over `noofrequest`.
+- **warmupduration**: It instructs the tool signal the request as warm up for a period of time measured in  `minutes`. If present the request done during that preiod of time will be for warm up purposes. These request will be accounted differently.
 - **workers**: It defines the number of concurrent users you want to simulate.
 - **maxrequest**: It defines an overall max to the number of request generated per second.  If `0` there is no limitation, if `10` it'll only generate 10 request per second regardless of the number of workers.
 
@@ -366,11 +372,11 @@ Request total [2103] average [1.359391885s]
 |Command line |[DONE]| |
 |Reporting |[DONE]| Different type of output reports|
 |Reporting - As a module|[DONE]| |
+|Warm up request|[DONE]||
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-|Warm up request|[PENDING]||
 |Tests dude  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
 |Reporting - Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|

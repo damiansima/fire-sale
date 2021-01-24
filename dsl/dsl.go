@@ -20,11 +20,13 @@ type Configuration struct {
 	Name       string
 	Host       string
 	Parameters struct {
-		NoOfRequest  int
-		TestDuration int
-		Workers      int
-		MaxRequest   int
-		RampUp       struct {
+		NoOfRequest       int
+		NoOfWarmupRequest int
+		TestDuration      int
+		WarmupDuration    int
+		Workers           int
+		MaxRequest        int
+		RampUp            struct {
 			Step int
 			Time int
 		}
@@ -60,11 +62,11 @@ func ParseConfiguration(configPath string) Configuration {
 
 	ext := path.Ext(configPath)
 	if ext == ".yml" || ext == ".yaml" {
-		log.Debugf("Parsing yml|yaml file: %s",configPath)
+		log.Debugf("Parsing yml|yaml file: %s", configPath)
 		err = yaml.Unmarshal(cfBytes, &configuration)
 	}
 	if ext == ".json" {
-		log.Debugf("Parsing .json file: %s",configPath)
+		log.Debugf("Parsing .json file: %s", configPath)
 		err = json.Unmarshal(cfBytes, &configuration)
 	}
 	if err != nil {

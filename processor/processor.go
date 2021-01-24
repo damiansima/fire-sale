@@ -14,7 +14,7 @@ const startMark = "{{"
 const endMark = "}}"
 
 func Process(original string) (string, error) {
-	log.Debugf("Original string to parse: %s", original)
+	log.Tracef("Original string to parse: %s", original)
 
 	parsedCopy := original
 	placeholders := getPlaceholders(parsedCopy)
@@ -35,7 +35,7 @@ func replace(template string, placeholders []string, placeholderMap map[string]f
 		key = strings.Trim(key, endMark)
 		processed = strings.Replace(processed, placeholder, placeholderMap[key](), 1)
 	}
-	log.Debugf("Replaced  template: %v", processed)
+	log.Tracef("Replaced  template: %v", processed)
 	return processed
 }
 
@@ -47,13 +47,13 @@ func getPlaceholders(template string) []string {
 		startIdx := strings.Index(template, startMark)
 		endIdx := strings.Index(template, endMark) + 2
 		if startIdx < 0 {
-			log.Debugf("Nothing found to replace")
+			log.Tracef("Nothing found to replace")
 			return []string{}
 		}
 
 		placeholder := template[startIdx:endIdx]
 
-		log.Debugf("Found placeholder: %s", placeholder)
+		log.Tracef("Found placeholder: %s", placeholder)
 		placeholders = append(placeholders, placeholder)
 
 		if len(template) > endIdx {
@@ -62,7 +62,7 @@ func getPlaceholders(template string) []string {
 			keepParsing = false
 		}
 	}
-	log.Debugf("Placeholders found: %v", placeholders)
+	log.Tracef("Placeholders found: %v", placeholders)
 	return placeholders
 }
 

@@ -26,6 +26,11 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 
 	// TODO allow for a channel to plot data points
 	for result := range results {
+		if result.job.IsWarmup {
+			// TODO we may want to have data about this
+			log.Debugf("Warmp result skiping")
+			continue
+		}
 		overallResult.RequestCount++
 		elapsedOverall := result.End.Sub(result.Start)
 		elapsedNetwork := result.Trace.ConnectDoneTime.Sub(result.Trace.ConnectStartTime)
