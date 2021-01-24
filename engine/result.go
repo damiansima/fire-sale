@@ -1,41 +1,58 @@
 package engine
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/influxdata/tdigest"
 	log "github.com/sirupsen/logrus"
+	"os"
 	"time"
 )
 
-type ReportResult struct {
+type ScenarioResult struct {
 	Name               string
 	RequestCount       int64
 	FailCount          int64
 	SuccessCount       int64
 	TimeoutCount       int64
 	Td                 tdigest.TDigest
-	DurationSum        time.Duration
 	DurationRequestSum time.Duration
+}
+
+func (sr *ScenarioResult) SuccessRate() float32 {
+	return float32((sr.SuccessCount * 100) / sr.RequestCount)
+}
+
+func (sr *ScenarioResult) FailRate() float32 {
+	return float32(((sr.TimeoutCount + sr.FailCount) * 100) / sr.RequestCount)
+}
+
+func (sr *ScenarioResult) TimoutRate() float32 {
+	return float32(((sr.TimeoutCount) * 100) / sr.RequestCount)
+}
+
+// TODO average time should taken from configuration with/without latency
+func (sr *ScenarioResult) RequestDurationAvg() time.Duration {
+	return time.Duration(sr.DurationRequestSum.Nanoseconds() / sr.RequestCount)
+}
+
+type Report struct {
+	OverallResult   ScenarioResult
+	ScenarioResults map[int]ScenarioResult
 }
 
 // TODO this needs to be moved
 func ConsumeResults(results chan Result, done chan bool) {
-	var durationSum time.Duration
-	var durationRequestSum time.Duration
-	var count int64
-
-	var failCount int64
-	var successCount int64
-	var timeoutCount int64
-
-	scenarioResults := make(map[int]ReportResult)
+	overallResult := ScenarioResult{}
+	scenarioResults := make(map[int]ScenarioResult)
 
 	// TODO THIS SHOULD BE ACCUMULATED FOR REPORT PURPOSES
 	var last int64
 	go func() {
 		for _ = range time.Tick(10 * time.Second) {
-			requestPerPeriod := count - last
+			requestPerPeriod := overallResult.RequestCount - last
 			log.Infof("Request per 10 second [%d] | per 1 second [%d]...", requestPerPeriod, requestPerPeriod/10)
-			last = count
+			last = overallResult.RequestCount
 		}
 	}()
 
@@ -45,7 +62,7 @@ func ConsumeResults(results chan Result, done chan bool) {
 
 	// TODO allow for a channel to plot data points
 	for result := range results {
-		count++
+		overallResult.RequestCount++
 		elapsedOverall := result.End.Sub(result.Start)
 		elapsedNetwork := result.Trace.ConnectDoneTime.Sub(result.Trace.ConnectStartTime)
 		elapsedRequest := result.Trace.GotFirstResponseByteTime.Sub(result.Trace.WroteRequestTime)
@@ -59,88 +76,112 @@ func ConsumeResults(results chan Result, done chan bool) {
 		if actualServerTime < 0 {
 			actualServerTime = -1 * actualServerTime
 		}
+
+		overallResult.DurationRequestSum += actualServerTime
 		// TODO we should not account failed request but we should account timeout
-		durationSum += elapsedOverall
-		durationRequestSum += actualServerTime
 		td.Add(actualServerTime.Seconds(), 1)
 
 		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%t]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
 
-		reportResult, ok := scenarioResults[result.job.ScenarioId]
-		if !ok {
-			reportResult = ReportResult{
-				Name:         result.job.Name,
-				RequestCount: 0,
-			}
-		}
-
-		reportResult.RequestCount++
-		reportResult.DurationSum += elapsedOverall
-		reportResult.DurationRequestSum += actualServerTime
-		reportResult.Td.Add(actualServerTime.Seconds(), 1)
-
-		if result.Timeout {
-			timeoutCount++
-			reportResult.TimeoutCount++
-		} else if result.Status > 0 && result.Status < 300 {
-			successCount++
-			reportResult.SuccessCount++
-		} else {
-			failCount++
-			reportResult.FailCount++
-		}
+		reportResult := buildScenarioResult(result, actualServerTime, scenarioResults, &overallResult)
 		scenarioResults[result.job.ScenarioId] = reportResult
 	}
+	overallResult.Td = *td
 
-	overallResult := ReportResult{
-		Name:               "Overal",
-		RequestCount:       count,
-		FailCount:          failCount, // TODO BUG: Fail percentage is not accurate
-		SuccessCount:       successCount,
-		TimeoutCount:       timeoutCount,
-		Td:                 *td,
-		DurationSum:        durationSum,
-		DurationRequestSum: durationRequestSum,
-	}
-
-	printResults(overallResult, scenarioResults)
+	report := Report{OverallResult: overallResult, ScenarioResults: scenarioResults}
+	printResults(report, "", "")
 
 	done <- true
 }
 
-// TODO this needs to me moved to a report module
-func printResults(overallResult ReportResult, scenarioResults map[int]ReportResult) {
-	log.Infof("********************************************************")
-	log.Infof("*                      Results                         *")
-	log.Infof("********************************************************")
+func buildScenarioResult(result Result, actualServerTime time.Duration, scenarioResults map[int]ScenarioResult, overallResult *ScenarioResult) ScenarioResult {
+	scenarioResult, ok := scenarioResults[result.job.ScenarioId]
+	if !ok {
+		scenarioResult = ScenarioResult{
+			Name:         result.job.Name,
+			RequestCount: 0,
+		}
+	}
+	scenarioResult.RequestCount++
+	scenarioResult.DurationRequestSum += actualServerTime
+	scenarioResult.Td.Add(actualServerTime.Seconds(), 1)
 
-	log.Infof("========================================================")
-	log.Infof("=                     Scenarios                        =")
-	log.Infof("========================================================")
-	for key, reportResult := range scenarioResults {
-		log.Infof("Scenario - %s - ID: [%d]", reportResult.Name, key)
-		log.Infof("Success [%f%%] - Fail [%f%%]", float32((reportResult.SuccessCount*100)/reportResult.RequestCount), float32(((reportResult.TimeoutCount+reportResult.FailCount)*100)/reportResult.RequestCount))
-		log.Infof("Request average [%s] ", time.Duration(reportResult.DurationRequestSum.Nanoseconds()/reportResult.RequestCount))
-		log.Infof("Request total [%d] average [%s] ", reportResult.RequestCount, time.Duration(reportResult.DurationSum.Nanoseconds()/reportResult.RequestCount))
-		log.Infof("99th %fms", reportResult.Td.Quantile(0.99)/time.Millisecond.Seconds())
-		log.Infof("90th %fms", reportResult.Td.Quantile(0.9)/time.Millisecond.Seconds())
-		log.Infof("75th %fms", reportResult.Td.Quantile(0.75)/time.Millisecond.Seconds())
-		log.Infof("50th %fms", reportResult.Td.Quantile(0.5)/time.Millisecond.Seconds())
-		log.Infof("--------------------------------------------------------")
+	if result.Timeout {
+		overallResult.TimeoutCount++
+		scenarioResult.TimeoutCount++
+	} else if result.Status > 0 && result.Status < 300 {
+		overallResult.SuccessCount++
+		scenarioResult.SuccessCount++
+	} else {
+		//TODO BUG: Fail percentage is not accurate
+		overallResult.FailCount++
+		scenarioResult.FailCount++
+	}
+	return scenarioResult
+}
+
+// TODO this needs to me moved to a report module
+func printResults(report Report, reportType, reportFilePath string) {
+	var jsonReport []byte
+	var reportLines []string
+
+	if reportType == "json" {
+		jsonReport, _ = json.Marshal(report)
+	} else {
+		reportLines = buildReportLines(report)
 	}
 
-	log.Infof("========================================================")
-	log.Infof("=                     Overall                          =")
-	log.Infof("========================================================")
+	if reportFilePath != "" {
+		reportFile, _ := os.Create(reportFilePath)
+		defer reportFile.Close()
+		if reportType == "json" {
+			reportFile.Write(jsonReport)
+		} else {
+			for _, line := range reportLines {
+				fmt.Fprintln(reportFile, line)
+			}
+		}
+	} else {
+		if reportType == "json" {
+			log.Infof(string(jsonReport))
+		} else {
+			for _, line := range reportLines {
+				log.Info(line)
+			}
+		}
+	}
+}
 
-	log.Infof("Success [%f%%] - Fail [%f%%]", float32((overallResult.SuccessCount*100)/overallResult.RequestCount), float32(((overallResult.TimeoutCount+overallResult.FailCount)*100)/overallResult.RequestCount))
-	// TODO average time should taken from configuration with/without latency
-	log.Infof("Request average [%s] ", time.Duration(overallResult.DurationRequestSum.Nanoseconds()/overallResult.RequestCount))
-	log.Infof("Request total [%d] average [%s] ", overallResult.RequestCount, time.Duration(overallResult.DurationSum.Nanoseconds()/overallResult.RequestCount))
-	// TODO we may need to change this lib at least inject it
-	log.Infof("99th %fms", overallResult.Td.Quantile(0.99)/time.Millisecond.Seconds())
-	log.Infof("90th %fms", overallResult.Td.Quantile(0.9)/time.Millisecond.Seconds())
-	log.Infof("75th %fms", overallResult.Td.Quantile(0.75)/time.Millisecond.Seconds())
-	log.Infof("50th %fms", overallResult.Td.Quantile(0.5)/time.Millisecond.Seconds())
-	log.Infof("Timeout [%d] - Fail [%d] - Success [%d]  ", overallResult.TimeoutCount, overallResult.FailCount, overallResult.SuccessCount)
+func buildReportLines(report Report) []string {
+	reportLines := make([]string, 0)
+
+	reportLines = append(reportLines, fmt.Sprintf("********************************************************"))
+	reportLines = append(reportLines, fmt.Sprintf("*                      Results                         *"))
+	reportLines = append(reportLines, fmt.Sprintf("********************************************************"))
+	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
+	reportLines = append(reportLines, fmt.Sprintf("=                     Scenarios                        ="))
+	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
+	for key, scenarioResult := range report.ScenarioResults {
+		reportLines = append(reportLines, fmt.Sprintf("Scenario - %s - ID: [%d]", scenarioResult.Name, key))
+		reportLines = buildScenarioReportLines(reportLines, scenarioResult)
+		reportLines = append(reportLines, fmt.Sprintf("--------------------------------------------------------"))
+	}
+	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
+	reportLines = append(reportLines, fmt.Sprintf("=                     Overall                          ="))
+	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
+	reportLines = buildScenarioReportLines(reportLines, report.OverallResult)
+	reportLines = append(reportLines, fmt.Sprintf("Timeout [%d] - Fail [%d] - Success [%d]  ", report.OverallResult.TimeoutCount, report.OverallResult.FailCount, report.OverallResult.SuccessCount))
+	return reportLines
+}
+
+func buildScenarioReportLines(reportLines []string, scenarioResult ScenarioResult) []string {
+	reportLines = append(reportLines, fmt.Sprintf("Success [%f%%] - Fail [%f%%]", scenarioResult.SuccessRate(), scenarioResult.FailRate()))
+	reportLines = append(reportLines, fmt.Sprintf("Request average [%s] ", scenarioResult.RequestDurationAvg()))
+	reportLines = append(reportLines, fmt.Sprintf("Request total [%d] ", scenarioResult.RequestCount))
+
+	reportLines = append(reportLines, fmt.Sprintf("99th %fms", scenarioResult.Td.Quantile(0.99)/time.Millisecond.Seconds()))
+	reportLines = append(reportLines, fmt.Sprintf("90th %fms", scenarioResult.Td.Quantile(0.9)/time.Millisecond.Seconds()))
+	reportLines = append(reportLines, fmt.Sprintf("75th %fms", scenarioResult.Td.Quantile(0.75)/time.Millisecond.Seconds()))
+	reportLines = append(reportLines, fmt.Sprintf("50th %fms", scenarioResult.Td.Quantile(0.5)/time.Millisecond.Seconds()))
+	return reportLines
 }
