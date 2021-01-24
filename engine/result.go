@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func ConsumeResults(results chan Result, done chan bool, reportType, reportFilePath string) {
+func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	overallResult := ScenarioResult{}
 	scenarioResults := make(map[int]ScenarioResult)
 
@@ -52,8 +52,8 @@ func ConsumeResults(results chan Result, done chan bool, reportType, reportFileP
 	}
 	overallResult.Td = *td
 
-	report := Report{OverallResult: overallResult, ScenarioResults: scenarioResults}
-	printResults(report, reportType, reportFilePath)
+	report.OverallResult = overallResult
+	report.ScenarioResults = scenarioResults
 
 	done <- true
 }
@@ -83,4 +83,3 @@ func buildScenarioResult(result Result, actualServerTime time.Duration, scenario
 	}
 	return scenarioResult
 }
-
