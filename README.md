@@ -377,6 +377,7 @@ Request total [2103] average [1.359391885s]
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
+|Reporting - Warm up request|[PENDING]||
 |Tests dude  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
 |Reporting - Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|
