@@ -61,7 +61,7 @@ func ConfigureLog(logLevel string) {
 	}
 }
 
-func Run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, rampUp RampUp, certificates Certificates, reportType, reportFilePath string) {
+func Run(noOfWorkers int, noOfRequest int, noOfWarmupJobs int, testDuration time.Duration, warmupDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, rampUp RampUp, certificates Certificates, reportType, reportFilePath string) {
 	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", noOfRequest, testDuration, noOfWorkers, maxSpeedPerSecond, rampUp)
 	start := time.Now()
 
@@ -70,7 +70,7 @@ func Run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedP
 	jobs := make(chan Job, jobBufferSize)
 	results := make(chan Result, resultBufferSize)
 
-	go AllocateJobs(noOfRequest, testDuration, maxSpeedPerSecond, scenarios, jobs)
+	go AllocateJobs(noOfRequest, noOfWarmupJobs, testDuration, warmupDuration, maxSpeedPerSecond, scenarios, jobs)
 
 	done := make(chan bool)
 	report := Report{}
@@ -118,8 +118,6 @@ func work(workerId int, wg *sync.WaitGroup, jobs chan Job, results chan Result, 
 		if job.AllowConnectionReuse {
 			transport = http.DefaultTransport
 		} else {
-			// TODO remove this function
-			//workerTransport := newDefaultTransport()
 			workerTransport := newDefaultTransportWithTLSSupport(certificates.ClientCertFile, certificates.ClientKeyFile, certificates.CaCertFile)
 			transport = workerTransport
 		}
@@ -184,22 +182,6 @@ func doRequest(method, url string, reqBody io.Reader, headers map[string]string,
 // This method ensures a new instance of the Transport struct
 // The goal is use it to force no reuse of connections between go routines
 // and simulate different users
-func newDefaultTransport() http.RoundTripper {
-	var newTransport http.RoundTripper = &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-	return newTransport
-}
-
 func newDefaultTransportWithTLSSupport(clientCertFile string, clientKeyFile string, caCertFile string) http.RoundTripper {
 	tlsConfig := buildTlsConfig(clientCertFile, clientKeyFile, caCertFile)
 
