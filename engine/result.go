@@ -42,7 +42,7 @@ type Report struct {
 }
 
 // TODO this needs to be moved
-func ConsumeResults(results chan Result, done chan bool) {
+func ConsumeResults(results chan Result, done chan bool, reportType, reportFilePath string) {
 	overallResult := ScenarioResult{}
 	scenarioResults := make(map[int]ScenarioResult)
 
@@ -89,7 +89,7 @@ func ConsumeResults(results chan Result, done chan bool) {
 	overallResult.Td = *td
 
 	report := Report{OverallResult: overallResult, ScenarioResults: scenarioResults}
-	printResults(report, "", "")
+	printResults(report, reportType, reportFilePath)
 
 	done <- true
 }

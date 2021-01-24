@@ -61,7 +61,7 @@ func ConfigureLog(logLevel string) {
 	}
 }
 
-func Run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, rampUp RampUp, certificates Certificates) {
+func Run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, rampUp RampUp, certificates Certificates, reportType, reportFilePath string) {
 	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", noOfRequest, testDuration, noOfWorkers, maxSpeedPerSecond, rampUp)
 	start := time.Now()
 
@@ -73,7 +73,7 @@ func Run(noOfWorkers int, noOfRequest int, testDuration time.Duration, maxSpeedP
 	go AllocateJobs(noOfRequest, testDuration, maxSpeedPerSecond, scenarios, jobs)
 
 	done := make(chan bool)
-	go ConsumeResults(results, done)
+	go ConsumeResults(results, done, reportType, reportFilePath)
 
 	if (RampUp{}) == rampUp {
 		rampUp = DefaultRampUp
