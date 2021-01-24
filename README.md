@@ -364,17 +364,17 @@ Request total [2103] average [1.359391885s]
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
+|Warm up request|[PENDING]||
+|Reporting |[PENDING]| Different type of output reports|
 |Tests dude  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
 |Reporting |[PENDING]| Printers Inject printers by configuration|
-|Reporting |[PENDING]| Different type of output reports|
 |Reporting - As a module|[PENDING]| Request through time, percentiles through time, latency|
 |Reporting - Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|
 |Auto Generation of DSL  |[PENDING]| Swagger Scaffolding|
 |Events  |[PENDING]| Generate load by creating events|
 |Payload size analisis   | [PENDING] ||
 |Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
-|Warm up request|[PENDING]||
 |Speed up to a desired number of request vs concurrent users  | [PENDING] ||
 |DSL short for Capacity testing | [PENDING] |Keep adding workers up until timeout is constant|
 |DSL short for Spike  Traffic | [PENDING] ||
