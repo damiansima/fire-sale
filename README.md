@@ -47,7 +47,7 @@ It's composed by the following sections:
 
 *Note*: It supports YAML & JSON files.
 
-```
+```yaml
 name: da stress test
 host: https://www.fake-host.com
 parameters:
@@ -86,7 +86,7 @@ This section is just the root, it describes the:
  - name 
  - host
 
-```
+```yaml
 name: da stress test
 host: https://www.fake-host.com
 ``` 
@@ -94,7 +94,7 @@ The host will be used as the base of all the HTTP requests
 
 ## DSL :: Parameters
 This section describes the amount of traffic you want to generate and how to get there:
-```
+```yaml
   parameters:
     noofrequest: 10
     noofwarmuprequest: 2
@@ -115,7 +115,7 @@ This section describes the amount of traffic you want to generate and how to get
 
 ### DSL :: Parameters :: Ramp Up
 This section defines how the maximum number of workers is reached. 
-```
+```yaml
   parameters:
     rampup:
       step: 1
@@ -131,7 +131,7 @@ Normally you want to smooth the curve of traffic to simulate actual traffic.
 ## DSL :: Certificates
 FireSale supports the usage of key/cert files for when you need to hit services behind TSL. 
 If present the below section will load the certs and use it for all scenarios. As a general part of the file it will use them for all `scenarios`  
-```
+```yaml
 certificates:
   clientkeyfile:  /path/to/your-key-file.key
   clientcertfile: /path/to/your-cert-file.crt
@@ -144,7 +144,7 @@ certificates:
 ## DSL :: Scenarios
 The `scenarios` is where you describe the actual HTTP requests to be made. 
 The order of execution of the scenarios is random, respecting the distribution profile.
-```
+```yaml
 scenarios:
   - name: First endpoint
     distribution: 0.7
@@ -174,7 +174,7 @@ As you can see it's an array and you can define as many as required.
 
 ## DSL :: Scenarios :: Distribution          
 This part deserves its own section.
-```
+```yaml
 - distribution: 0.3
 ``` 
 The distribution allows you to assign a percentage value from `0` to `1`.
@@ -194,7 +194,7 @@ This functions can be used in the following sections of the `DSL`:
 * body 
 
 A function in the DSL is placeholded by two curly braces like so `{{` & `}}`: 
-```
+```yaml
 path: /?id={{RandInRange(0,11)}}
 ```
 
@@ -301,7 +301,7 @@ Request total [2103] average [1.359391885s]
 
 
 ## DSL :: JSON Example 
-```
+```json
 {
   "Name": "da stress test",
   "Host": "https://www.fake-host.com",
