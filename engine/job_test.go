@@ -1,9 +1,10 @@
 package engine
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAllocateJobs(t *testing.T) {
@@ -28,7 +29,7 @@ func TestAllocateJobs(t *testing.T) {
 				time.Sleep(5 * time.Millisecond)
 				shouldStop <- true
 			}()
-			err := AllocateJobs(test.noOfJobs, test.testDuration, test.maxSpearPerSecond, test.scenarios, test.jobs)
+			err := AllocateJobs(test.noOfJobs, 0, test.testDuration, time.Duration(0), test.maxSpearPerSecond, test.scenarios, test.jobs)
 			if err != nil {
 				assert.Fail(t, "Test should not have failed")
 			}
@@ -90,11 +91,16 @@ func Test_allocateJobsUntilDone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			shouldStop := make(chan bool)
+			shouldWarmupStop := make(chan bool)
 			go func() {
 				time.Sleep(5 * time.Millisecond)
 				shouldStop <- true
 			}()
-			allocateJobsUntilDone(shouldStop, test.maxSpearPerSecond, test.scenarios, test.buckets, test.jobs)
+			go func() {
+				time.Sleep(5 * time.Millisecond)
+				shouldWarmupStop <- true
+			}()
+			allocateJobsUntilDone(shouldStop, shouldWarmupStop, test.maxSpearPerSecond, test.scenarios, test.buckets, test.jobs)
 
 			j := <-test.jobs
 
@@ -124,7 +130,7 @@ func Test_allocatePredefinedNumberOfJobs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			allocatePredefinedNumberOfJobs(test.noOfJobs, test.maxSpearPerSecond, test.scenarios, test.buckets, test.jobs)
+			allocatePredefinedNumberOfJobs(test.noOfJobs, 0, test.maxSpearPerSecond, test.scenarios, test.buckets, test.jobs)
 			j := <-test.jobs
 			assert.True(t, len(test.jobs) == test.noOfJobs-1)
 			assert.Equal(t, j.Id, test.scenarios[0].Id)
@@ -150,7 +156,7 @@ func Test_allocateJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			allocateJob(test.id, test.scenarios, test.distributionBucket, -1, test.jobs)
+			allocateJob(test.id, false, test.scenarios, test.distributionBucket, -1, test.jobs)
 			if test.shouldFail {
 				assert.Equal(t, 0, len(jobsChan))
 			} else {

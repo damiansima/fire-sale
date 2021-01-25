@@ -1,10 +1,11 @@
 package engine
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/storozhukBM/verifier"
 	"io"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/storozhukBM/verifier"
 )
 
 // TODO this probably needs a new name
@@ -24,7 +25,7 @@ type Job struct {
 // AllocateJobs creates jobs and adds them to the jobs queue
 // It receives noOfJobs and testDurationMs, if the second is grated than 0 it takes precedences and keeps
 // pushing jobs during the defined period. If not the specified value of jobs will be created
-func AllocateJobs(noOfJobs int,noOfWarmupJobs int, testDuration time.Duration, warmupDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, jobs chan Job) error {
+func AllocateJobs(noOfJobs int, noOfWarmupJobs int, testDuration time.Duration, warmupDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, jobs chan Job) error {
 	log.Debugf("Allocating jobs ...")
 
 	distributionsBuckets, err := buildDistributionBuckets(scenarios)
