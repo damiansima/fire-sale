@@ -278,7 +278,7 @@ Request total [8923] average [1.153201479s]
 75th 215.387629ms                            
 50th 15.555311ms                             
 Timeout [0] - Fail [0] - Success [8923]      
-Execution toke [3m1.856963175s]              
+Execution took [3m1.856963175s]
 [¡¡¡SOLD!!!]                     
 ```
 The report will print statistics per each scenario, and an overall result. 
