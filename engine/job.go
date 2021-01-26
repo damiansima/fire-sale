@@ -117,12 +117,12 @@ func allocatePredefinedNumberOfJobs(noOfJobs int, noOfWarmupJobs int, maxSpeedPe
 		}
 		if maxSpeedPerSecond > 0 {
 			for j := 0; j < maxSpeedPerSecond; j++ {
-				allocateJob(i, isWarmup, scenarios, distributionsBuckets, i, jobs)
+				allocateJob(i, isWarmup, scenarios, distributionsBuckets, -1, jobs)
 				i++
 			}
 			time.Sleep(1 * time.Second)
 		} else {
-			allocateJob(i, isWarmup, scenarios, distributionsBuckets, i, jobs)
+			allocateJob(i, isWarmup, scenarios, distributionsBuckets, -1, jobs)
 			i++
 		}
 	}
@@ -154,6 +154,8 @@ func selectScenario(scenarios []Scenario, buckets []float32, bucketValue int) (S
 	if bucketValue < 0 {
 		scenario = scenarios[SelectBucket(buckets)]
 	} else {
+		// TODO this scenario is only when you want to run scenarios in a certain order
+		// TODO it needs to be fixed is not used in time based tests and in request based tests will fail over 100 reques
 		scenario = scenarios[SelectBucketContaining(bucketValue, buckets)]
 	}
 	log.Debugf("Selecting Scenario %s", scenario.Name)
