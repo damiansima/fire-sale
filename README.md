@@ -377,14 +377,11 @@ Request total [2103] average [1.359391885s]
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-| BUG   |[PENDING]| % of success and failures does not add up to 100|
 | BUG   |[PENDING]| report time formating is not clear  Request average [-222h42m33.477095448s]|
-| BUG   |[PENDING]| Scnerios with  timeout -1 are reporting timed out request|
 | BUG   |[PENDING]| IF ADDING A SPACE AFTER THE COMMA BREAKS body: "{{RandInRange(0, 1000)}}”|
 | BUG   |[PENDING]| THIS BRAKES WITH panic: runtime error: index out of range [-1] check "moliva-iob-bug.yml"|
 | FEAT |[PENDING]|   TEST DURATION : allow for units in time|
 | FEAT|[PENDING]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
-| FEAT|[PENDING]| ADD 95% TO REPORT|
 | DOC|[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
 |Reporting - Warm up request|[PENDING]||
 |Tests dude  | [PENDING] ||

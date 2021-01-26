@@ -29,7 +29,7 @@ func (sr *ScenarioResult) SuccessRate() float32 {
 }
 
 func (sr *ScenarioResult) FailRate() float32 {
-	return float32(((sr.TimeoutCount + sr.FailCount) * 100) / sr.RequestCount)
+	return float32((( sr.FailCount) * 100) / sr.RequestCount)
 }
 
 func (sr *ScenarioResult) TimoutRate() float32 {
@@ -59,19 +59,20 @@ func buildReportLines(report Report) []string {
 	reportLines = append(reportLines, fmt.Sprintf("=                     Overall                          ="))
 	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
 	reportLines = buildScenarioReportLines(reportLines, report.OverallResult)
-	reportLines = append(reportLines, fmt.Sprintf("Fail [%d] - Timeout [%d] - Success [%d]  ", report.OverallResult.TimeoutCount, report.OverallResult.FailCount, report.OverallResult.SuccessCount))
 	return reportLines
 }
 
 func buildScenarioReportLines(reportLines []string, scenarioResult ScenarioResult) []string {
 	reportLines = append(reportLines, fmt.Sprintf("99th %fms", scenarioResult.Td.Quantile(0.99)/time.Millisecond.Seconds()))
+	reportLines = append(reportLines, fmt.Sprintf("95th %fms", scenarioResult.Td.Quantile(0.95)/time.Millisecond.Seconds()))
 	reportLines = append(reportLines, fmt.Sprintf("90th %fms", scenarioResult.Td.Quantile(0.9)/time.Millisecond.Seconds()))
 	reportLines = append(reportLines, fmt.Sprintf("75th %fms", scenarioResult.Td.Quantile(0.75)/time.Millisecond.Seconds()))
 	reportLines = append(reportLines, fmt.Sprintf("50th %fms", scenarioResult.Td.Quantile(0.5)/time.Millisecond.Seconds()))
 
 	reportLines = append(reportLines, fmt.Sprintf("Request total [%d] ", scenarioResult.RequestCount))
 	reportLines = append(reportLines, fmt.Sprintf("Request average [%s] ", scenarioResult.RequestDurationAvg()))
-	reportLines = append(reportLines, fmt.Sprintf("Success [%f%%] - Fail [%f%%]", scenarioResult.SuccessRate(), scenarioResult.FailRate()))
+	reportLines = append(reportLines, fmt.Sprintf("Request Counts: Fail [%d] - Timeout [%d] - Success [%d]  ", scenarioResult.FailCount, scenarioResult.TimeoutCount,  scenarioResult.SuccessCount))
+	reportLines = append(reportLines, fmt.Sprintf("Request Rates: Fail [%f%%] - Timeout [%f%%] - Success [%f%%]",  scenarioResult.FailRate(),scenarioResult.TimoutRate(), scenarioResult.SuccessRate()))
 	return reportLines
 }
 
