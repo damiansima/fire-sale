@@ -3,7 +3,6 @@ package engine
 import (
 	"crypto/tls"
 	"crypto/x509"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"net/http/httptrace"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Defines the way the engine will get to the defined amount of workers
@@ -83,7 +84,7 @@ func Run(noOfWorkers int, noOfRequest int, noOfWarmupJobs int, testDuration time
 	<-done
 
 	printReport(report, reportType, reportFilePath)
-	log.Infof("Execution toke [%s]", time.Now().Sub(start))
+	log.Infof("Execution took [%s]", time.Now().Sub(start))
 }
 
 func runWorkers(noOfWorkers int, rampUp RampUp, certificates Certificates, jobs chan Job, results chan Result) {
