@@ -377,10 +377,10 @@ Request total [2103] average [1.359391885s]
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-| BUG   |[PENDING]| report time formating is not clear  Request average [-222h42m33.477095448s]|
 | BUG   |[PENDING]| IF ADDING A SPACE AFTER THE COMMA BREAKS body: "{{RandInRange(0, 1000)}}”|
 | BUG   |[PENDING]| THIS BRAKES WITH panic: runtime error: index out of range [-1] check "moliva-iob-bug.yml"|
-| FEAT |[PENDING]|   TEST DURATION : allow for units in time|
+| FEAT |[PENDING]|   TIMEOUT : allow for units in time & define default unit|
+| FEAT |[PENDING]|   TEST DURATION : allow for units in time & define default unit|
 | FEAT|[PENDING]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
 | DOC|[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
 |Reporting - Warm up request|[PENDING]||
@@ -398,6 +398,7 @@ Request total [2103] average [1.359391885s]
 |Numbers with network latency should be a configuration| [PENDING] | |
 |BUG in the combination of number of jobs workers and running time  | [PENDING] | |
 |Support for gPRC|[PENDING]||
+|Reduce binary size|[PENDING]| it currently wights 9+ mb [check](https://golang.org/doc/install/gccgo), this `go build -ldflags "-w" ` to it to 7.3  |
 
 ## PLATFORM TODO
 | **Feature** | **Status** | *Notes* |

@@ -84,7 +84,7 @@ func Run(noOfWorkers int, noOfRequest int, noOfWarmupJobs int, testDuration time
 	<-done
 
 	printReport(report, reportType, reportFilePath)
-	log.Infof("Execution took [%s]", time.Now().Sub(start))
+	log.Infof("Execution took [%.2fs]", time.Now().Sub(start).Seconds())
 }
 
 func runWorkers(noOfWorkers int, rampUp RampUp, certificates Certificates, jobs chan Job, results chan Result) {

@@ -67,8 +67,9 @@ func buildScenarioResult(result Result, actualServerTime time.Duration, scenario
 	scenarioResult, ok := scenarioResults[result.job.ScenarioId]
 	if !ok {
 		scenarioResult = ScenarioResult{
-			Name:         result.job.Name,
-			RequestCount: 0,
+			Name:           result.job.Name,
+			DefinedTimeout: result.job.Timeout,
+			RequestCount:   0,
 		}
 	}
 	scenarioResult.RequestCount++
