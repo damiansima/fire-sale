@@ -16,9 +16,14 @@ func TestParseDuration(t *testing.T) {
 		args args
 		want time.Duration
 	}{
+		{"Parse empty", args{""}, time.Duration(0) * time.Minute},
+		{"Parse 0 without unit", args{"0"}, time.Duration(0) * time.Minute},
+		{"Parse 0 s", args{"0ms"}, time.Duration(0) * time.Minute},
+		{"Parse 0 s", args{"0s"}, time.Duration(0) * time.Minute},
+		{"Parse 0 s", args{"0m"}, time.Duration(0) * time.Minute},
 		{"Parse without unit", args{"3"}, time.Duration(3) * time.Minute},
-		{"Parse ns", args{"3000ms"}, time.Duration(3) * time.Minute},
-		{"Parse ms", args{"3000ms"}, time.Duration(3) * time.Minute},
+		{"Parse ns", args{"300000000000ns"}, time.Duration(5) * time.Minute},
+		{"Parse ms", args{"300000ms"}, time.Duration(5) * time.Minute},
 		{"Parse m", args{"3m"}, time.Duration(3) * time.Minute},
 		{"Parse h", args{"1h"}, time.Duration(60) * time.Minute},
 		{"Parse h and m", args{"1h30m"}, time.Duration(90) * time.Minute},

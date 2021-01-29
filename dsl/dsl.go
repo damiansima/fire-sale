@@ -52,13 +52,19 @@ type Scenario struct {
 }
 
 func ParseDuration(duration string) time.Duration {
+	if duration == "" {
+		return time.Duration(0)
+	}
+
 	regx, _ := regexp.Compile("^[0-9]*$")
 	if regx.MatchString(duration) {
 		log.Debugf("Duration %s sent without unit. Defaulting to %sm", duration, duration)
 		duration = duration + "m"
 	}
 	parseDuration, err := time.ParseDuration(duration)
-	log.Warnf("Fail to parse duration %s - err %v", duration, err)
+	if err != nil {
+		log.Warnf("Fail to parse duration %s - err %v", duration, err)
+	}
 	return parseDuration
 }
 
