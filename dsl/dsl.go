@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
 	"time"
 )
 
@@ -22,13 +23,13 @@ type Configuration struct {
 	Parameters struct {
 		NoOfRequest       int
 		NoOfWarmupRequest int
-		TestDuration      int
-		WarmupDuration    int
+		TestDuration      string
+		WarmupDuration    string
 		Workers           int
 		MaxRequest        int
 		RampUp            struct {
 			Step int
-			Time int
+			Time string
 		}
 	}
 	Certificates struct {
@@ -48,6 +49,17 @@ type Scenario struct {
 	Path         string
 	Headers      map[string]string
 	Body         string
+}
+
+func ParseDuration(duration string) time.Duration {
+	regx, _ := regexp.Compile("^[0-9]*$")
+	if regx.MatchString(duration) {
+		log.Debugf("Duration %s sent without unit. Defaulting to %sm", duration, duration)
+		duration = duration + "m"
+	}
+	parseDuration, err := time.ParseDuration(duration)
+	log.Warnf("Fail to parse duration %s - err %v", duration, err)
+	return parseDuration
 }
 
 func ParseConfiguration(configPath string) Configuration {
@@ -76,10 +88,9 @@ func ParseConfiguration(configPath string) Configuration {
 }
 
 func MapRampUp(configuration Configuration) engine.RampUp {
-	// TODO define default ram up if empty
 	return engine.RampUp{
 		Step: configuration.Parameters.RampUp.Step,
-		Time: time.Duration(configuration.Parameters.RampUp.Time) * time.Minute,
+		Time: ParseDuration(configuration.Parameters.RampUp.Time),
 	}
 }
 

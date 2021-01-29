@@ -6,7 +6,6 @@ import (
 	"github.com/damiansima/fire-sale/engine"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"time"
 )
 
 func main() {
@@ -31,8 +30,8 @@ func main() {
 func run(configPath, reportType, reportFilePath string) {
 	log.Infof("Running %s ...", configPath)
 	configuration := dsl.ParseConfiguration(configPath)
-	testDuration := time.Duration(configuration.Parameters.TestDuration) * time.Minute
-	warmupDuration := time.Duration(configuration.Parameters.WarmupDuration) * time.Minute
+	testDuration := dsl.ParseDuration(configuration.Parameters.TestDuration)
+	warmupDuration := dsl.ParseDuration(configuration.Parameters.WarmupDuration)
 
 	engine.Run(configuration.Parameters.Workers, configuration.Parameters.NoOfRequest, configuration.Parameters.NoOfWarmupRequest, testDuration, warmupDuration, configuration.Parameters.MaxRequest, dsl.MapScenarios(configuration), dsl.MapRampUp(configuration), dsl.MapCertificates(configuration), reportType, reportFilePath)
 }

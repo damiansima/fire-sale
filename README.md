@@ -108,8 +108,8 @@ This section describes the amount of traffic you want to generate and how to get
 ```
 - **noofrequest**: It's used when you just want to generate an specific number of hits. The run will finish after executing all the requests defined.
 - **noofwarmuprequest**: Indicate the number of request done in order to warmup the service. These request will be accounted differently. 
-- **testduration**: It instructs the tool to run for a period of time measured in  `minutes`. If present it takes precedence over `noofrequest`.
-- **warmupduration**: It instructs the tool signal the request as warm up for a period of time measured in  `minutes`. If present the request done during that preiod of time will be for warm up purposes. These request will be accounted differently.
+- **testduration**: It instructs the tool to run for a period of time. If present it takes precedence over `noofrequest`. Valid units are ["ns", "us", "ms", "s", "m", "h"] as described [here](https://golang.org/pkg/time/#ParseDuration). If not provided the default unit is `minutes (m)` 
+- **warmupduration**: It instructs the tool signal the request as warm up for a period of time. If present the request done during that period of time will be for warm up purposes. These request will be accounted differently. Valid units are ["ns", "us", "ms", "s", "m", "h"] as described [here](https://golang.org/pkg/time/#ParseDuration). If not provided the default unit is `minutes (m)`
 - **workers**: It defines the number of concurrent users you want to simulate.
 - **maxrequest**: It defines an overall max to the number of request generated per second.  If `0` there is no limitation, if `10` it'll only generate 10 request per second regardless of the number of workers.
 
@@ -123,7 +123,7 @@ This section defines how the maximum number of workers is reached.
 ```
 If not defined it will spin up all workers at the same time generating a traffic profile that will look like a spike.
 Normally you want to smooth the curve of traffic to simulate actual traffic.
-- **time**: It defines the amount of minutes you want to wait between the beginning of the execution up until reaching the maximum number of workers running
+- **time**: It defines the time you want to wait between the beginning of the execution up until reaching the maximum number of workers running. Valid units are ["ns", "us", "ms", "s", "m", "h"] as described [here](https://golang.org/pkg/time/#ParseDuration). If not provided the default unit is `minutes (m)`
 - **step**: It takes the defined time and splits it by this number generating and scalonated traffic. The larger this number the smoother the traffic curve. 
 
 *Note*: if not provided the default ram up is `step:1 , time:0` 
@@ -373,13 +373,13 @@ Request total [2103] average [1.359391885s]
 |Reporting |[DONE]| Different type of output reports|
 |Reporting - As a module|[DONE]| |
 |Warm up request|[DONE]||
+| FEAT |[DONE]|   TIMEOUT : allow for units in time & define default unit|
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
 | BUG   |[PENDING]| IF ADDING A SPACE AFTER THE COMMA BREAKS body: "{{RandInRange(0, 1000)}}”|
 | BUG   |[PENDING]| THIS BRAKES WITH panic: runtime error: index out of range [-1] check "moliva-iob-bug.yml"|
-| FEAT |[PENDING]|   TIMEOUT : allow for units in time & define default unit|
 | FEAT |[PENDING]|   TEST DURATION : allow for units in time & define default unit|
 | FEAT|[PENDING]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
 | DOC|[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
