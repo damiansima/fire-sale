@@ -93,9 +93,9 @@ func funcBuilder(name string, params []string) (func() string, error) {
 			log.Warnf("Fail to parse function %s, error: %v", name, verify.GetError())
 			return nil, verify.GetError()
 		}
-		param1, err := strconv.Atoi(params[0])
+		param1, err := strconv.Atoi(strings.TrimSpace(params[0]))
 		verify.That(err == nil, "The parameter  %s must be and int", param1)
-		param2, err := strconv.Atoi(params[1])
+		param2, err := strconv.Atoi(strings.TrimSpace(params[1]))
 		verify.That(err == nil, "The parameter  %s must be and int", param2)
 		if verify.GetError() != nil {
 			log.Warnf("Fail to parse function %s, error: %v", name, verify.GetError())

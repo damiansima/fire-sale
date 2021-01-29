@@ -55,7 +55,6 @@ func ParseDuration(duration string) time.Duration {
 	if duration == "" {
 		return time.Duration(0)
 	}
-
 	regx, _ := regexp.Compile("^[0-9]*$")
 	if regx.MatchString(duration) {
 		log.Debugf("Duration %s sent without unit. Defaulting to %sm", duration, duration)

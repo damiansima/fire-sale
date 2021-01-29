@@ -70,6 +70,7 @@ func Test_funcBuilder(t *testing.T) {
 		{"Build RandInRange wrong first param type", args{"RandInRange", []string{"nan", "2"}}, true},
 		{"Build RandInRange wrong second param type", args{"RandInRange", []string{"1", "nan"}}, true},
 		{"Build RandInRange", args{"RandInRange", []string{"1", "2"}}, false},
+		{"Build RandInRange with spaces", args{"RandInRange", []string{" 1 ", " 2 "}}, false},
 		{"Build RandInList wrong param number", args{"RandInList", []string{}}, true},
 		{"Build RandInList", args{"RandInList", []string{"hi", "stalker"}}, false},
 		{"Build RandInFile wrong param number", args{"RandInFile", []string{}}, true},
@@ -88,6 +89,36 @@ func Test_funcBuilder(t *testing.T) {
 					t.Errorf("funcBuilder() should have fail")
 				}
 			}
+		})
+	}
+}
+
+func Test_buildPlaceholderMap(t *testing.T) {
+	type args struct {
+		placeholders []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]func() string
+		wantErr bool
+	}{
+		{"", args{[]string{"{{RandInRange(0, 1000)}}"}}, map[string]func() string{"RandInRange(0, 1000)": func() string { return "" }}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := buildPlaceholderMap(tt.args.placeholders)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("buildPlaceholderMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			for k := range got {
+				if tt.want[k] == nil {
+					t.Errorf("buildPlaceholderMap() got contains key = %s, but want doesn't", k)
+					return
+				}
+			}
+
 		})
 	}
 }
