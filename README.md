@@ -375,13 +375,12 @@ Request total [2103] average [1.359391885s]
 |Reporting - As a module|[DONE]| |
 |Warm up request|[DONE]||
 | FEAT |[DONE]|   TIMEOUT : allow for units in time & define default unit|
+| FEAT|[DONE]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-| BUG   |[PENDING]| THIS BRAKES WITH panic: runtime error: index out of range [-1] check "moliva-iob-bug.yml"|
 | BUG   |[PENDING]| json parsing brakes with new duration changes|
-| FEAT|[PENDING]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
 | DOC|[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
 |Reporting - Warm up request|[PENDING]||
 |Tests dude  | [PENDING] ||

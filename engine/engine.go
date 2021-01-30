@@ -3,6 +3,9 @@ package engine
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
+	"fmt"
+	"github.com/storozhukBM/verifier"
 	"io"
 	"io/ioutil"
 	"net"
@@ -62,7 +65,15 @@ func ConfigureLog(logLevel string) {
 	}
 }
 
+// TODO should receive an engine configuration
+// TODO that configuration should do scenario even distribution and validation
 func Run(noOfWorkers int, noOfRequest int, noOfWarmupJobs int, testDuration time.Duration, warmupDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, rampUp RampUp, certificates Certificates, reportType, reportFilePath string) {
+	var err error
+	scenarios, err = balanceScenarioDistribution(scenarios)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", noOfRequest, testDuration, noOfWorkers, maxSpeedPerSecond, rampUp)
 	start := time.Now()
 
@@ -226,4 +237,45 @@ func buildTlsConfig(clientCertFile string, clientKeyFile string, caCertFile stri
 		}
 	}
 	return tlsConfig
+}
+
+func balanceScenarioDistribution(scenarios []Scenario) ([]Scenario, error) {
+	var balancedScenarios []Scenario
+
+	verify := verifier.New()
+	verify.That(len(scenarios) > 0, "Scenarios must not be empty")
+	if verify.GetError() != nil {
+		return scenarios, verify.GetError()
+	}
+
+	remainingDistribution := float32(1)
+	scenariosWithNoDistribution := []Scenario{}
+	for _, scenario := range scenarios {
+		if scenario.Distribution == 0 {
+			scenariosWithNoDistribution = append(scenariosWithNoDistribution, scenario)
+		} else {
+			balancedScenarios = append(balancedScenarios, scenario)
+			remainingDistribution -= scenario.Distribution
+		}
+	}
+
+	if remainingDistribution < 0 || (remainingDistribution == 0 && len(scenariosWithNoDistribution) > 0) {
+		message := fmt.Sprintf("Scenarios Distribution should add up to 1 ")
+		err := errors.New(message)
+		log.Error(err)
+		return scenarios, err
+	}
+
+	if remainingDistribution > 0 {
+		assignedDistribution := remainingDistribution / float32(len(scenariosWithNoDistribution))
+		log.Debugf("Remaining distrubition %.2f. It will be assigned evently with %.2f", remainingDistribution, assignedDistribution)
+		for _, scenario := range scenariosWithNoDistribution {
+			log.Debugf("Assigning distrubition %.2f to scenario id %d, name: %s ", assignedDistribution, scenario.Id, scenario.Name)
+			scenario.Distribution = assignedDistribution
+			balancedScenarios = append(balancedScenarios, scenario)
+		}
+	} else {
+		log.Debugf("Remaining distrubition %.2f. Doing nothing", remainingDistribution)
+	}
+	return balancedScenarios, nil
 }
