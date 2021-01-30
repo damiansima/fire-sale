@@ -182,7 +182,13 @@ The distribution allows you to assign a percentage value from `0` to `1`.
 The engine will randomly select a scenario to be run each time. If you only have one scenario with a distribution of 1 it will then only run that scenario. 
 But if you have two scenarios you can ask the engine to distribute the executions evenly, that's 50/50, or you can ask it to do 70/30.
 
-This feature allows you to, in one execution, replicate complex traffic profiles as usually your services expose a number of endpoints but not all of them are hit in the same proportion. With this you can stress your service and more realistic conditions.  
+This feature allows you to, in one execution, replicate complex traffic profiles as usually your services expose a number of endpoints but not all of them are hit in the same proportion. With this you can stress your service and more realistic conditions.
+
+When the distribution is not present at a scenario, the engine will assign one by distributing any remaings evently between the scnarios without distrubution.
+For instance: 
+* If you have 2 scenarios it'll assign 0.5 to each. 
+* If you have 2 scenarios one with 0.3 the remaining one will get assigned 0.7.
+* If you have 3 scenarios one with 0.5 the remaining two will get assigned 0.25 each.
 
 *Note*: The sum of the distributions of all scenarios must add up to `1` or  the execution will fail.
 
