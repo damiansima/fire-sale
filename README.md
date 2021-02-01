@@ -388,17 +388,17 @@ Request total [2103] average [1.359391885s]
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
 | FEAT |[PENDING]| Define status code list and greater than for success|
-| FEAT |[PENDING]| Define response validation to define success|
 | BUG  |[PENDING]| json parsing brakes with new duration changes|
+| TASK |[PENDING]| Tests dude !!!!!|
+| TASK |[PENDING]| Deal with TODOs|
+| FEAT |[PENDING]| Reporting: Payload size analisis - show payload sizes and averages  |
+| FEAT |[PENDING]| Define response validation to define success|
 | BUG  |[PENDING]| in the combination of number of jobs workers and running time|
 | FEAT |[PENDING]| Auto Generation of DSL [Swagger Scaffolding](https://github.com/go-swagger/go-swagger) |
 | FEAT |[PENDING]| Speed up to a desired number of request vs concurrent users|
 | FEAT |[PENDING]| DSL short for Capacity testing - Keep adding workers up until timeout is constant|
 | FEAT |[PENDING]| DSL short for Spike  Traffic|
-| FEAT |[PENDING]| Reporting: Payload size analisis - show payload sizes and averages  |
 | FEAT |[PENDING]| Reporting: Suggest In the event of several DNS resolution suggest change url|
-|Tests dude  | [PENDING] ||
-|Deal with TODOs  | [PENDING] ||
 |Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
 |Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|
 |Numbers with network latency should be a configuration| [PENDING] | |
