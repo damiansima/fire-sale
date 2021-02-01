@@ -391,7 +391,6 @@ Request total [2103] average [1.359391885s]
 | FEAT |[PENDING]| Define response validation to define success|
 | BUG  |[PENDING]| json parsing brakes with new duration changes|
 | BUG  |[PENDING]| in the combination of number of jobs workers and running time|
-| DOC  |[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
 | FEAT |[PENDING]| Auto Generation of DSL [Swagger Scaffolding](https://github.com/go-swagger/go-swagger) |
 | FEAT |[PENDING]| Speed up to a desired number of request vs concurrent users|
 | FEAT |[PENDING]| DSL short for Capacity testing - Keep adding workers up until timeout is constant|

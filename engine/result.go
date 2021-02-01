@@ -15,7 +15,7 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	go func() {
 		for _ = range time.Tick(10 * time.Second) {
 			requestPerPeriod := overallResult.RequestCount - last
-			log.Infof("Request per 10 second [%d] | per 1 second [%d]...", requestPerPeriod, requestPerPeriod/10)
+			log.Infof("Requesting: [%d] RPS | [%d] request every 10s ...", requestPerPeriod/10, requestPerPeriod)
 			last = overallResult.RequestCount
 		}
 	}()
