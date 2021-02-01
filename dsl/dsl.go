@@ -18,26 +18,32 @@ import (
 )
 
 type Configuration struct {
-	Name       string
-	Host       string
-	Parameters struct {
-		NoOfRequest       int
-		NoOfWarmupRequest int
-		TestDuration      string
-		WarmupDuration    string
-		Workers           int
-		MaxRequest        int
-		RampUp            struct {
-			Step int
-			Time string
-		}
-	}
-	Certificates struct {
-		ClientCertFile string
-		ClientKeyFile  string
-		CaCertFile     string
-	}
-	Scenarios []Scenario
+	Name         string
+	Host         string
+	Parameters   Parameters
+	Certificates Certificates
+	Scenarios    []Scenario
+}
+
+type Parameters struct {
+	NoOfRequest       int
+	NoOfWarmupRequest int
+	TestDuration      string
+	WarmupDuration    string
+	Workers           int
+	MaxRequest        int
+	RampUp            RampUp
+}
+
+type RampUp struct {
+	Step int
+	Time string
+}
+
+type Certificates struct {
+	ClientCertFile string
+	ClientKeyFile  string
+	CaCertFile     string
 }
 
 type Scenario struct {
@@ -49,22 +55,6 @@ type Scenario struct {
 	Path         string
 	Headers      map[string]string
 	Body         string
-}
-
-func ParseDuration(duration string) time.Duration {
-	if duration == "" {
-		return time.Duration(0)
-	}
-	regx, _ := regexp.Compile("^[0-9]*$")
-	if regx.MatchString(duration) {
-		log.Debugf("Duration %s sent without unit. Defaulting to %sm", duration, duration)
-		duration = duration + "m"
-	}
-	parseDuration, err := time.ParseDuration(duration)
-	if err != nil {
-		log.Warnf("Fail to parse duration %s - err %v", duration, err)
-	}
-	return parseDuration
 }
 
 func ParseConfiguration(configPath string) Configuration {
@@ -90,6 +80,22 @@ func ParseConfiguration(configPath string) Configuration {
 		panic(err)
 	}
 	return configuration
+}
+
+func ParseDuration(duration string) time.Duration {
+	if duration == "" {
+		return time.Duration(0)
+	}
+	regx, _ := regexp.Compile("^[0-9]*$")
+	if regx.MatchString(duration) {
+		log.Debugf("Duration %s sent without unit. Defaulting to %sm", duration, duration)
+		duration = duration + "m"
+	}
+	parseDuration, err := time.ParseDuration(duration)
+	if err != nil {
+		log.Warnf("Fail to parse duration %s - err %v", duration, err)
+	}
+	return parseDuration
 }
 
 func MapRampUp(configuration Configuration) engine.RampUp {

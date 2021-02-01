@@ -17,6 +17,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type Configuration struct {
+	Name         string
+	Parameters   Parameters
+	Certificates Certificates
+	Scenarios    []Scenario
+}
+
+type Parameters struct {
+	NoOfRequest       int
+	NoOfWarmupRequest int
+	TestDuration      time.Duration
+	WarmupDuration    time.Duration
+	Workers           int
+	MaxRequest        int
+	RampUp            RampUp
+}
+
 // Defines the way the engine will get to the defined amount of workers
 type RampUp struct {
 	Step int
@@ -29,9 +46,6 @@ type Certificates struct {
 	CaCertFile     string
 }
 
-var DefaultRampUp RampUp = RampUp{Step: 1, Time: 0}
-
-// TODO this probably needs a new name
 type Scenario struct {
 	Id           int
 	Name         string
@@ -49,6 +63,8 @@ type Result struct {
 	job     Job
 }
 
+var DefaultRampUp RampUp = RampUp{Step: 1, Time: 0}
+
 func ConfigureLog(logLevel string) {
 	log.SetFormatter(&log.TextFormatter{})
 
@@ -65,33 +81,32 @@ func ConfigureLog(logLevel string) {
 	}
 }
 
-// TODO should receive an engine configuration
 // TODO that configuration should do scenario even distribution and validation
-func Run(noOfWorkers int, noOfRequest int, noOfWarmupJobs int, testDuration time.Duration, warmupDuration time.Duration, maxSpeedPerSecond int, scenarios []Scenario, rampUp RampUp, certificates Certificates, reportType, reportFilePath string) {
+func Run(config Configuration, reportType, reportFilePath string) {
 	var err error
-	scenarios, err = balanceScenarioDistribution(scenarios)
+	config.Scenarios, err = balanceScenarioDistribution(config.Scenarios)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", noOfRequest, testDuration, noOfWorkers, maxSpeedPerSecond, rampUp)
+	// TODO fix ram up print
+	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Warm up Request [%d] - Warmup Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", config.Parameters.NoOfRequest, config.Parameters.TestDuration, config.Parameters.NoOfWarmupRequest, config.Parameters.WarmupDuration, config.Parameters.Workers, config.Parameters.MaxRequest, config.Parameters.RampUp)
 	start := time.Now()
 
 	jobBufferSize := 15
-	resultBufferSize := 1000 * noOfWorkers
+	resultBufferSize := 1000 * config.Parameters.Workers
 	jobs := make(chan Job, jobBufferSize)
 	results := make(chan Result, resultBufferSize)
 
-	go AllocateJobs(noOfRequest, noOfWarmupJobs, testDuration, warmupDuration, maxSpeedPerSecond, scenarios, jobs)
+	go AllocateJobs(config.Parameters.NoOfRequest, config.Parameters.NoOfWarmupRequest, config.Parameters.TestDuration, config.Parameters.WarmupDuration, config.Parameters.MaxRequest, config.Scenarios, jobs)
 
 	done := make(chan bool)
 	report := Report{}
 	go ConsumeResults(results, done, &report)
 
-	if (RampUp{}) == rampUp {
-		rampUp = DefaultRampUp
+	if (RampUp{}) == config.Parameters.RampUp {
+		config.Parameters.RampUp = DefaultRampUp
 	}
-	runWorkers(noOfWorkers, rampUp, certificates, jobs, results)
+	runWorkers(config.Parameters.Workers, config.Parameters.RampUp, config.Certificates, jobs, results)
 	<-done
 
 	printReport(report, reportType, reportFilePath)

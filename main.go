@@ -30,8 +30,21 @@ func main() {
 func run(configPath, reportType, reportFilePath string) {
 	log.Infof("Running %s ...", configPath)
 	configuration := dsl.ParseConfiguration(configPath)
-	testDuration := dsl.ParseDuration(configuration.Parameters.TestDuration)
-	warmupDuration := dsl.ParseDuration(configuration.Parameters.WarmupDuration)
 
-	engine.Run(configuration.Parameters.Workers, configuration.Parameters.NoOfRequest, configuration.Parameters.NoOfWarmupRequest, testDuration, warmupDuration, configuration.Parameters.MaxRequest, dsl.MapScenarios(configuration), dsl.MapRampUp(configuration), dsl.MapCertificates(configuration), reportType, reportFilePath)
+	config := engine.Configuration{
+		Name: configuration.Name,
+		Parameters: engine.Parameters{
+			NoOfRequest:       configuration.Parameters.NoOfRequest,
+			NoOfWarmupRequest: configuration.Parameters.NoOfWarmupRequest,
+			TestDuration:      dsl.ParseDuration(configuration.Parameters.TestDuration),
+			WarmupDuration:    dsl.ParseDuration(configuration.Parameters.WarmupDuration),
+			Workers:           configuration.Parameters.Workers,
+			MaxRequest:        configuration.Parameters.MaxRequest,
+			RampUp:            dsl.MapRampUp(configuration),
+		},
+		Certificates: dsl.MapCertificates(configuration),
+		Scenarios:    dsl.MapScenarios(configuration),
+	}
+
+	engine.Run(config, reportType, reportFilePath)
 }

@@ -382,27 +382,29 @@ Request total [2103] average [1.359391885s]
 |Warm up request|[DONE]||
 | FEAT |[DONE]|   TIMEOUT : allow for units in time & define default unit|
 | FEAT|[DONE]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
+| FEAT |[DONE]| Engine should receive an engine configuration instead of all parameters|
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-| BUG   |[PENDING]| json parsing brakes with new duration changes|
-| DOC|[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
-|Reporting - Warm up request|[PENDING]||
+| FEAT |[PENDING]| Define status code list and greater than for success|
+| FEAT |[PENDING]| Define response validation to define success|
+| BUG  |[PENDING]| json parsing brakes with new duration changes|
+| BUG  |[PENDING]| in the combination of number of jobs workers and running time|
+| DOC  |[PENDING]| explain this log lines properly "Request per 10 second [403] | per 1 second [40]..."|
+| FEAT |[PENDING]| Auto Generation of DSL [Swagger Scaffolding](https://github.com/go-swagger/go-swagger) |
+| FEAT |[PENDING]| Speed up to a desired number of request vs concurrent users|
+| FEAT |[PENDING]| DSL short for Capacity testing - Keep adding workers up until timeout is constant|
+| FEAT |[PENDING]| DSL short for Spike  Traffic|
+| FEAT |[PENDING]| Reporting: Payload size analisis - show payload sizes and averages  |
+| FEAT |[PENDING]| Reporting: Suggest In the event of several DNS resolution suggest change url|
 |Tests dude  | [PENDING] ||
 |Deal with TODOs  | [PENDING] ||
-|Reporting - Reporting Suggestion|[PENDING]| In the event of several DNS resolution suggest change url|
-|Auto Generation of DSL  |[PENDING]| Swagger Scaffolding|
-|Events  |[PENDING]| Generate load by creating events|
-|Payload size analisis   | [PENDING] ||
 |Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
-|Speed up to a desired number of request vs concurrent users  | [PENDING] ||
-|DSL short for Capacity testing | [PENDING] |Keep adding workers up until timeout is constant|
-|DSL short for Spike  Traffic | [PENDING] ||
 |Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|
 |Numbers with network latency should be a configuration| [PENDING] | |
-|BUG in the combination of number of jobs workers and running time  | [PENDING] | |
-|Support for gPRC|[PENDING]||
+| FEAT |[PENDING]| Support for gPRC|
+| FEAT |[PENDING]| Events Load testing: Generate load by creating events|
 |Reduce binary size|[PENDING]| it currently wights 9+ mb [check](https://golang.org/doc/install/gccgo), this `go build -ldflags "-w" ` to it to 7.3  |
 
 ## PLATFORM TODO
