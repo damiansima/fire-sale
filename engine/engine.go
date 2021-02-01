@@ -1,16 +1,9 @@
 package engine
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"github.com/storozhukBM/verifier"
-	"io"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/http/httptrace"
 	"sync"
 	"time"
 
@@ -65,193 +58,30 @@ type Result struct {
 
 var DefaultRampUp RampUp = RampUp{Step: 1, Time: 0}
 
-func ConfigureLog(logLevel string) {
-	log.SetFormatter(&log.TextFormatter{})
-
-	customFormatter := new(log.TextFormatter)
-	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
-	log.SetFormatter(customFormatter)
-	customFormatter.FullTimestamp = true
-
-	level, err := log.ParseLevel(logLevel)
-	if err != nil {
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(level)
-	}
-}
-
-// TODO that configuration should do scenario even distribution and validation
-func Run(config Configuration, reportType, reportFilePath string) {
+func (c *Configuration) init() error {
+	log.Debugf("Initializing configuration ...")
 	var err error
-	config.Scenarios, err = balanceScenarioDistribution(config.Scenarios)
+	c.initRampUp()
+	err = c.balanceScenarioDistribution()
+	return err
+}
+
+func (c *Configuration) initRampUp() {
+	log.Debugf("Initializing ramp up ...")
+	if (RampUp{}) == c.Parameters.RampUp {
+		log.Debugf("Ramp up not defined defaulting")
+		c.Parameters.RampUp = DefaultRampUp
+	}
+}
+
+func (c *Configuration) balanceScenarioDistribution() error {
+	log.Debugf("Balancing out scenario distribution ...")
+	balancedScenarios, err := balanceScenarioDistribution(c.Scenarios)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	// TODO fix ram up print
-	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Warm up Request [%d] - Warmup Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", config.Parameters.NoOfRequest, config.Parameters.TestDuration, config.Parameters.NoOfWarmupRequest, config.Parameters.WarmupDuration, config.Parameters.Workers, config.Parameters.MaxRequest, config.Parameters.RampUp)
-	start := time.Now()
-
-	jobBufferSize := 15
-	resultBufferSize := 1000 * config.Parameters.Workers
-	jobs := make(chan Job, jobBufferSize)
-	results := make(chan Result, resultBufferSize)
-
-	go AllocateJobs(config.Parameters.NoOfRequest, config.Parameters.NoOfWarmupRequest, config.Parameters.TestDuration, config.Parameters.WarmupDuration, config.Parameters.MaxRequest, config.Scenarios, jobs)
-
-	done := make(chan bool)
-	report := Report{}
-	go ConsumeResults(results, done, &report)
-
-	if (RampUp{}) == config.Parameters.RampUp {
-		config.Parameters.RampUp = DefaultRampUp
-	}
-	runWorkers(config.Parameters.Workers, config.Parameters.RampUp, config.Certificates, jobs, results)
-	<-done
-
-	printReport(report, reportType, reportFilePath)
-	log.Infof("Execution took [%.2fs]", time.Now().Sub(start).Seconds())
-}
-
-func runWorkers(noOfWorkers int, rampUp RampUp, certificates Certificates, jobs chan Job, results chan Result) {
-	log.Infof("Running [%d] concurrent workers ...", noOfWorkers)
-	var wg sync.WaitGroup
-
-	// TODO BUG rampUp.Step can not be < 0
-	// TODO BUG rampUp.Step can not be > noOfWorkers
-	// TODO test: step can't go over, noOfWorker
-	steps := noOfWorkers / rampUp.Step
-	pace := time.Duration(rampUp.Time.Nanoseconds() / int64(steps))
-
-	log.Debugf("Ramping up in [%d] steps...", steps)
-	for i := 0; i < noOfWorkers; {
-		for s := 0; i < noOfWorkers && s < rampUp.Step; s++ {
-			log.Debugf("Starting worker [%d]  ...", i)
-			wg.Add(1)
-			go work(i, &wg, jobs, results, certificates)
-			i++
-		}
-		log.Debugf("Pacing for [%s] ...", pace)
-		time.Sleep(pace)
-	}
-	wg.Wait()
-	close(results)
-	log.Infof("Workers finish job pool")
-}
-
-func work(workerId int, wg *sync.WaitGroup, jobs chan Job, results chan Result, certificates Certificates) {
-	var transport http.RoundTripper
-	for job := range jobs {
-		if job.AllowConnectionReuse {
-			transport = http.DefaultTransport
-		} else {
-			workerTransport := newDefaultTransportWithTLSSupport(certificates.ClientCertFile, certificates.ClientKeyFile, certificates.CaCertFile)
-			transport = workerTransport
-		}
-		log.Debugf("Worker [%d] running job [%d] ...", workerId, job.Id)
-		output := doRequest(job.Method, job.Url, job.ReqBody, job.Headers, job.Timeout, transport)
-		output.job = job
-		results <- output
-	}
-	wg.Done()
-}
-
-func doRequest(method, url string, reqBody io.Reader, headers map[string]string, timeout time.Duration, transport http.RoundTripper) Result {
-	log.Tracef("Making request  %s - %s ", method, url)
-
-	request, err := http.NewRequest(method, url, reqBody)
-	if headers != nil {
-		for k, v := range headers {
-			log.Tracef("Setting header %s : %s", k, v)
-			request.Header.Set(k, v)
-		}
-	}
-
-	if err != nil {
-		log.Tracef("Fail to create request %s", err)
-		// TODO this should be different
-		return Result{}
-	}
-
-	client := http.Client{Transport: transport}
-	client.Timeout = timeout
-	log.Tracef("Defined timout %s", client.Timeout)
-
-	traceableTransport := &TraceableTransport{Trace: &Trace{}}
-	trace := NewTrace(*traceableTransport)
-	request = request.WithContext(httptrace.WithClientTrace(request.Context(), trace))
-
-	start := time.Now()
-	resp, err := client.Do(request)
-	end := time.Now()
-
-	if err != nil {
-		log.Tracef("Fail to execute request %s", err)
-		isTimeOut := false
-		if err, ok := err.(net.Error); ok && err.Timeout() {
-			isTimeOut = true
-		}
-		return Result{Start: start, End: end, Timeout: isTimeOut, Trace: *traceableTransport.Trace}
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Tracef("Fail to read response %s", err)
-	} else {
-		log.Tracef("Resp Headers [%v]", resp.Header)
-		log.Tracef(string(body))
-	}
-
-	return Result{Start: start, End: end, Status: resp.StatusCode, Trace: *traceableTransport.Trace}
-}
-
-// This method ensures a new instance of the Transport struct
-// The goal is use it to force no reuse of connections between go routines
-// and simulate different users
-func newDefaultTransportWithTLSSupport(clientCertFile string, clientKeyFile string, caCertFile string) http.RoundTripper {
-	tlsConfig := buildTlsConfig(clientCertFile, clientKeyFile, caCertFile)
-
-	var newTransport http.RoundTripper = &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig:       &tlsConfig,
-	}
-
-	return newTransport
-}
-
-func buildTlsConfig(clientCertFile string, clientKeyFile string, caCertFile string) tls.Config {
-	var tlsConfig tls.Config
-	// TODO WE MAY not be releasing the files properly after reading it
-	if "" != clientCertFile && "" != clientKeyFile && caCertFile != "" {
-		cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
-		if err != nil {
-			log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", clientCertFile, clientKeyFile)
-		}
-
-		caCert, err := ioutil.ReadFile(caCertFile)
-		if err != nil {
-			log.Fatalf("Error opening cert file %s, Error: %s", caCertFile, err)
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-
-		tlsConfig = tls.Config{
-			Certificates:       []tls.Certificate{cert},
-			RootCAs:            caCertPool,
-			InsecureSkipVerify: true, // TODO this must be configuration
-		}
-	}
-	return tlsConfig
+	c.Scenarios = balancedScenarios
+	return nil
 }
 
 func balanceScenarioDistribution(scenarios []Scenario) ([]Scenario, error) {
@@ -293,4 +123,85 @@ func balanceScenarioDistribution(scenarios []Scenario) ([]Scenario, error) {
 		log.Debugf("Remaining distrubition %.2f. Doing nothing", remainingDistribution)
 	}
 	return balancedScenarios, nil
+}
+
+func ConfigureLog(logLevel string) {
+	log.SetFormatter(&log.TextFormatter{})
+
+	customFormatter := new(log.TextFormatter)
+	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	log.SetFormatter(customFormatter)
+	customFormatter.FullTimestamp = true
+
+	level, err := log.ParseLevel(logLevel)
+	if err != nil {
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(level)
+	}
+}
+
+func Run(config Configuration, reportType, reportFilePath string) {
+	var err error
+
+	err = config.init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Infof("Parameters - # of Request [%d] - Test Duration [%s] - Warm up Request [%d] - Warmup Duration [%s] - Concurrent Users [%d] - Max RPS [%d] - Ramp Up [%v]", config.Parameters.NoOfRequest, config.Parameters.TestDuration, config.Parameters.NoOfWarmupRequest, config.Parameters.WarmupDuration, config.Parameters.Workers, config.Parameters.MaxRequest, config.Parameters.RampUp)
+	start := time.Now()
+
+	jobBufferSize := 15
+	resultBufferSize := 1000 * config.Parameters.Workers
+	jobs := make(chan Job, jobBufferSize)
+	results := make(chan Result, resultBufferSize)
+
+	go AllocateJobs(config.Parameters.NoOfRequest, config.Parameters.NoOfWarmupRequest, config.Parameters.TestDuration, config.Parameters.WarmupDuration, config.Parameters.MaxRequest, config.Scenarios, jobs)
+
+	done := make(chan bool)
+	report := Report{}
+	go ConsumeResults(results, done, &report)
+
+	runWorkers(config.Parameters.Workers, config.Parameters.RampUp, config.Certificates, jobs, results)
+	<-done
+
+	printReport(report, reportType, reportFilePath)
+	log.Infof("Execution took [%.2fs]", time.Now().Sub(start).Seconds())
+}
+
+func runWorkers(noOfWorkers int, rampUp RampUp, certificates Certificates, jobs chan Job, results chan Result) {
+	log.Infof("Running [%d] concurrent workers ...", noOfWorkers)
+	var wg sync.WaitGroup
+
+	// TODO BUG rampUp.Step can not be < 0
+	// TODO BUG rampUp.Step can not be > noOfWorkers
+	// TODO test: step can't go over, noOfWorker
+	steps := noOfWorkers / rampUp.Step
+	pace := time.Duration(rampUp.Time.Nanoseconds() / int64(steps))
+
+	log.Debugf("Ramping up in [%d] steps...", steps)
+	for i := 0; i < noOfWorkers; {
+		for s := 0; i < noOfWorkers && s < rampUp.Step; s++ {
+			log.Debugf("Starting worker [%d]  ...", i)
+			wg.Add(1)
+			go work(i, &wg, jobs, results, certificates)
+			i++
+		}
+		log.Debugf("Pacing for [%s] ...", pace)
+		time.Sleep(pace)
+	}
+	wg.Wait()
+	close(results)
+	log.Infof("Workers finish job pool")
+}
+
+func work(workerId int, wg *sync.WaitGroup, jobs chan Job, results chan Result, certificates Certificates) {
+	for job := range jobs {
+		log.Debugf("Worker [%d] running job [%d] ...", workerId, job.Id)
+		result := DoRequest(job.Method, job.Url, job.ReqBody, job.Headers, job.Timeout, job.AllowConnectionReuse, certificates)
+		result.job = job
+		results <- result
+	}
+	wg.Done()
 }
