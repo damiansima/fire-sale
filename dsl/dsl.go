@@ -9,6 +9,8 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -47,14 +49,15 @@ type Certificates struct {
 }
 
 type Scenario struct {
-	Name         string
-	Distribution float32
-	Timeout      int
-	Method       string
-	Host         string
-	Path         string
-	Headers      map[string]string
-	Body         string
+	Name          string
+	Distribution  float32
+	Timeout       int
+	Method        string
+	Host          string
+	Path          string
+	Headers       map[string]string
+	Body          string
+	SuccessStatus []string
 }
 
 func ParseConfiguration(configPath string) Configuration {
@@ -153,7 +156,52 @@ func mapScenario(scId int, dslSc Scenario, host string) engine.Scenario {
 				Headers:              dslSc.Headers,
 				Timeout:              time.Duration(dslSc.Timeout),
 				AllowConnectionReuse: false, // TODO is this correct?
+				SuccessValidator:     buildJobSuccessValidator(dslSc.SuccessStatus),
 			}
 		},
 	}
+}
+
+func buildJobSuccessValidator(status []string) func(int) bool {
+	log.Debugf("Building job sucess validator for %v...", status)
+	if status != nil && len(status) > 0 {
+		var validatorChain []func(status int) bool
+		for _, statusToken := range status {
+			statusRange := strings.Split(statusToken, "-")
+			if len(statusRange) > 1 {
+				if len(statusRange) > 2 {
+					log.Warnf("Fail to parse status %s. ", statusToken)
+					return nil
+				}
+				minSuccessStatus, err := strconv.Atoi(strings.TrimSpace(statusRange[0]))
+				if err != nil {
+					log.Warnf("Fail to parse status %s. ", statusRange[0])
+					return nil
+				}
+				maxSuccessStatus, err := strconv.Atoi(strings.TrimSpace(statusRange[1]))
+				if err != nil {
+					log.Warnf("Fail to parse status %s. ", statusRange[1])
+					return nil
+				}
+				validatorChain = append(validatorChain, func(status int) bool { return status > minSuccessStatus && status < maxSuccessStatus })
+			} else {
+				successStatus, err := strconv.Atoi(strings.TrimSpace(statusToken))
+				if err != nil {
+					log.Warnf("Fail to parse status %s. ", statusToken)
+					return nil
+				}
+				validatorChain = append(validatorChain, func(status int) bool { return status == successStatus })
+			}
+		}
+
+		return func(status int) bool {
+			for _, validator := range validatorChain {
+				if validator(status) {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	return nil
 }

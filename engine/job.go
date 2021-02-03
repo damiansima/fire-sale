@@ -20,6 +20,15 @@ type Job struct {
 	Timeout              time.Duration
 	AllowConnectionReuse bool
 	IsWarmup             bool
+	SuccessValidator     func(status int) bool
+}
+
+func (j *Job) ValidateSuccess(status int) bool {
+	if j.SuccessValidator != nil {
+		return j.SuccessValidator(status)
+	} else {
+		return status > 0 && status < 300
+	}
 }
 
 // AllocateJobs creates jobs and adds them to the jobs queue

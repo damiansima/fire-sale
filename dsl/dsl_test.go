@@ -138,3 +138,52 @@ func Test_mapScenario(t *testing.T) {
 		})
 	}
 }
+
+func Test_buildJobSuccessValidator(t *testing.T) {
+	type args struct {
+		status []string
+	}
+
+	tests := []struct {
+		name                    string
+		args                    args
+		want                    func(int) bool
+		testStatus              int
+		functionShouldBeSuccess bool
+	}{
+		{"nil array should return nil", args{nil}, nil, 0, false},
+		{"empty array should return nil", args{[]string{}}, nil, 0, false},
+		{"{200a} array should return nil", args{[]string{"200a"}}, nil, 0, false},
+		{"{0a-300} array should return nil", args{[]string{"0a-300"}}, nil, 0, false},
+		{"{0-300a} array should return nil", args{[]string{"0-300a"}}, nil, 0, false},
+		{"{1-0-300-} array should return nil", args{[]string{"0-300-1"}}, nil, 0, false},
+		{"{-0-300-} array should return nil", args{[]string{"0-300-1"}}, nil, 0, false},
+		{"{0-300} array should return nil", args{[]string{"0-300-1"}}, nil, 0, false},
+		{"{0-300-1} array should return nil", args{[]string{"0-300-1"}}, nil, 0, false},
+		{"{200} array should return and 200 evaluate to true", args{[]string{"200"}}, func(int) bool { return true }, 200, true},
+		{"{200} array should return and 100 evaluate to false", args{[]string{"200"}}, func(int) bool { return true }, 100, false},
+		{"{0-300} array should return and 0 evaluate to false", args{[]string{"0-300"}}, func(int) bool { return true }, 0, false},
+		{"{0-300} array should return and 200 evaluate to true", args{[]string{"0-300"}}, func(int) bool { return true }, 200, true},
+		{"{0-300} array should return and 300 evaluate to false", args{[]string{"0-300"}}, func(int) bool { return true }, 300, false},
+		{"{0-300,400} array should return and 200 evaluate to true", args{[]string{"0-300", "400"}}, func(int) bool { return true }, 200, true},
+		{"{0-300,400} array should return and 400 evaluate to true", args{[]string{"0-300", "400"}}, func(int) bool { return true }, 400, true},
+		{"{0-300,400} array should return and 401 evaluate to false", args{[]string{"0-300", "400"}}, func(int) bool { return true }, 401, false},
+		{"{0-300,400} array should return and 0 evaluate to false", args{[]string{"0-300", "400"}}, func(int) bool { return true }, 0, false},
+		{"{0-300,400} array should return and 300 evaluate to false", args{[]string{"0-300", "400"}}, func(int) bool { return true }, 300, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildJobSuccessValidator(tt.args.status)
+			if tt.want == nil && got != nil {
+				t.Errorf("buildJobSuccessValidator() should have return a nil function")
+			} else if tt.want != nil && got == nil {
+				t.Errorf("buildJobSuccessValidator() should have return a function")
+			} else if tt.want != nil && got != nil {
+				gotIsSuccess := got(tt.testStatus)
+				if gotIsSuccess != tt.functionShouldBeSuccess {
+					t.Errorf("builtFunction(%d) should have return %v instead of %v", tt.testStatus, tt.functionShouldBeSuccess, gotIsSuccess)
+				}
+			}
+		})
+	}
+}

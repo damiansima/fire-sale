@@ -6,6 +6,19 @@ import (
 	"time"
 )
 
+type Result struct {
+	// TODO start and end are part of the Trace really remove it
+	Start   time.Time
+	End     time.Time
+	Trace   Trace
+	Status  int
+	Timeout bool
+	job     Job
+}
+func (r *Result) isSuccessful() bool{
+	return r.job.ValidateSuccess(r.Status)
+}
+
 func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	overallResult := ScenarioResult{}
 	scenarioResults := make(map[int]ScenarioResult)
@@ -79,7 +92,7 @@ func buildScenarioResult(result Result, actualServerTime time.Duration, scenario
 	if result.Timeout {
 		overallResult.TimeoutCount++
 		scenarioResult.TimeoutCount++
-	} else if result.Status > 0 && result.Status < 300 {
+	} else if result.isSuccessful() {
 		overallResult.SuccessCount++
 		scenarioResult.SuccessCount++
 	} else {

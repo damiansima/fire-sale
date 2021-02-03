@@ -46,15 +46,6 @@ type Scenario struct {
 	JobCreator   func(id int) Job
 }
 
-type Result struct {
-	// TODO start and end are part of the Trace really remove it
-	Start   time.Time
-	End     time.Time
-	Trace   Trace
-	Status  int
-	Timeout bool
-	job     Job
-}
 
 var DefaultRampUp RampUp = RampUp{Step: 1, Time: 0}
 

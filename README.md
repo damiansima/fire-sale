@@ -159,6 +159,9 @@ scenarios:
       timeout: -1
       method: PUT
       path: /another-endpoint
+      successstatus:
+        - 0-300
+        - 404
       headers:
         user-agent: fire-sale/0.0.1  
       body: {id:123, value:'some value'}  
@@ -172,6 +175,23 @@ As you can see it's an array and you can define as many as required.
 - **path**: It describes the path to hit.
 - **headers**: It's a key-value map with the headers to be sent.
 - **body**: The body to be sent.
+
+## DSL :: Scenarios :: Success Status
+In this section you can define which HTTP status codes are to be accounted as a success:
+```yaml
+- successstatus:
+  - 0-300
+  - 404
+``` 
+There are two ways in which you can do that a range and a specific value.
+
+
+* **Range**: it should be defined as `{min}-{max}`. The generated function will evaluate the status code as: `{min}> status <{max}` 
+* **Specific value**: it should be defined as a `{valid-satus}`. The generated function will evaluate the status code as:  `status == {valid-satus}`
+
+When more than one item in the `sucessstatus` array is provided, they will be evalluated as `||`. Thus if the status provided match any of the success criterias the scenario the response will be evaluated as a success.  
+
+**Note**: If not provided the engine will account any response between `0 and 300` as a success. 
 
 ## DSL :: Scenarios :: Distribution          
 This part deserves its own section.
@@ -381,13 +401,13 @@ Request total [2103] average [1.359391885s]
 |Reporting - As a module|[DONE]| |
 |Warm up request|[DONE]||
 | FEAT |[DONE]|   TIMEOUT : allow for units in time & define default unit|
-| FEAT|[DONE]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
+| FEAT |[DONE]| default distribution if no distribution distribute uniformly and if pressent in some just complete until 1|
 | FEAT |[DONE]| Engine should receive an engine configuration instead of all parameters|
+| FEAT |[DONE]| Define status code list and greater than for success|
 ### PENDING
 
 | **Feature** | **Status** | *Notes* |
 | --------|-------|------- |
-| FEAT |[PENDING]| Define status code list and greater than for success|
 | BUG  |[PENDING]| json parsing brakes with new duration changes|
 | TASK |[PENDING]| Tests dude !!!!!|
 | TASK |[PENDING]| Deal with TODOs|
