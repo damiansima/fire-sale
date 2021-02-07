@@ -419,12 +419,12 @@ Request total [2103] average [1.359391885s]
 | FEAT |[PENDING]| DSL short for Capacity testing - Keep adding workers up until timeout is constant|
 | FEAT |[PENDING]| DSL short for Spike  Traffic|
 | FEAT |[PENDING]| Reporting: Suggest In the event of several DNS resolution suggest change url|
-|Fire Sale as module  | [PENDING] | Make a module out of this and move actual job testing outside|
-|Check Job Buffer size to size it based on the expected max RPS| [PENDING] |we size the job buffer to at least the number of jobs so not to choke the producer|
-|Numbers with network latency should be a configuration| [PENDING] | |
+| FEAT |[PENDING]| Fire Sale as module: Make a module out of this and move actual job testing outside|
+| TASK |[PENDING]| Check Job Buffer size to size it based on the expected max RPS we size the job buffer to at least the number of jobs so not to choke the producer|
+| FEAT |[PENDING]| Numbers with network latency should be a configuration|
 | FEAT |[PENDING]| Support for gPRC|
 | FEAT |[PENDING]| Events Load testing: Generate load by creating events|
-|Reduce binary size|[PENDING]| it currently wights 9+ mb [check](https://golang.org/doc/install/gccgo), this `go build -ldflags "-w" ` to it to 7.3  |
+| TASK |[PENDING]| Reduce binary size it currently wights 9+ mb [check](https://golang.org/doc/install/gccgo), this `go build -ldflags "-w" ` to it to 7.3  |
 
 ## PLATFORM TODO
 | **Feature** | **Status** | *Notes* |

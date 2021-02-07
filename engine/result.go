@@ -15,13 +15,14 @@ type Result struct {
 	Timeout bool
 	job     Job
 }
-func (r *Result) isSuccessful() bool{
+
+func (r *Result) isSuccessful() bool {
 	return r.job.ValidateSuccess(r.Status)
 }
 
 func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	overallResult := ScenarioResult{}
-	scenarioResults := make(map[int]ScenarioResult)
+	scenarioResults := make(map[int]*ScenarioResult)
 
 	// TODO THIS SHOULD BE ACCUMULATED FOR REPORT PURPOSES
 	var last int64
@@ -64,9 +65,8 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 		td.Add(actualServerTime.Seconds(), 1)
 
 		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%t]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
-
-		reportResult := buildScenarioResult(result, actualServerTime, scenarioResults, &overallResult)
-		scenarioResults[result.job.ScenarioId] = reportResult
+		scenarioResult := getOrCreateScenarioResult(result, scenarioResults)
+		updateScenarioResult(result, actualServerTime, scenarioResult, &overallResult)
 	}
 	overallResult.Td = *td
 
@@ -76,15 +76,20 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	done <- true
 }
 
-func buildScenarioResult(result Result, actualServerTime time.Duration, scenarioResults map[int]ScenarioResult, overallResult *ScenarioResult) ScenarioResult {
+func getOrCreateScenarioResult(result Result, scenarioResults map[int]*ScenarioResult) *ScenarioResult {
 	scenarioResult, ok := scenarioResults[result.job.ScenarioId]
 	if !ok {
-		scenarioResult = ScenarioResult{
+		scenarioResult = &ScenarioResult{
 			Name:           result.job.Name,
 			DefinedTimeout: result.job.Timeout,
 			RequestCount:   0,
 		}
 	}
+	scenarioResults[result.job.ScenarioId] = scenarioResult
+	return scenarioResult
+}
+
+func updateScenarioResult(result Result, actualServerTime time.Duration, scenarioResult *ScenarioResult, overallResult *ScenarioResult) {
 	scenarioResult.RequestCount++
 	scenarioResult.DurationRequestSum += actualServerTime
 	scenarioResult.Td.Add(actualServerTime.Seconds(), 1)
@@ -100,5 +105,4 @@ func buildScenarioResult(result Result, actualServerTime time.Duration, scenario
 		overallResult.FailCount++
 		scenarioResult.FailCount++
 	}
-	return scenarioResult
 }

@@ -11,7 +11,7 @@ import (
 
 type Report struct {
 	OverallResult   ScenarioResult
-	ScenarioResults map[int]ScenarioResult
+	ScenarioResults map[int]*ScenarioResult
 }
 
 type ScenarioResult struct {
@@ -59,11 +59,11 @@ func buildReportLines(report Report) []string {
 	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
 	reportLines = append(reportLines, fmt.Sprintf("=                     Overall                          ="))
 	reportLines = append(reportLines, fmt.Sprintf("========================================================"))
-	reportLines = buildScenarioReportLines(reportLines, report.OverallResult)
+	reportLines = buildScenarioReportLines(reportLines, &report.OverallResult)
 	return reportLines
 }
 
-func buildScenarioReportLines(reportLines []string, scenarioResult ScenarioResult) []string {
+func buildScenarioReportLines(reportLines []string, scenarioResult *ScenarioResult) []string {
 	reportLines = append(reportLines, fmt.Sprintf("99th %.2fms", scenarioResult.Td.Quantile(0.99)/time.Millisecond.Seconds()))
 	reportLines = append(reportLines, fmt.Sprintf("95th %.2fms", scenarioResult.Td.Quantile(0.95)/time.Millisecond.Seconds()))
 	reportLines = append(reportLines, fmt.Sprintf("90th %.2fms", scenarioResult.Td.Quantile(0.9)/time.Millisecond.Seconds()))
