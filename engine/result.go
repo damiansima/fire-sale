@@ -24,9 +24,8 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	overallScenarioResult := ScenarioResult{}
 	scenarioResults := make(map[int]*ScenarioResult)
 
-	// TODO THIS SHOULD BE ACCUMULATED FOR REPORT PURPOSES
-	var last int64
 	go func() {
+		var last int64
 		for _ = range time.Tick(10 * time.Second) {
 			requestPerPeriod := overallScenarioResult.RequestCount - last
 			log.Infof("Requesting: [%d] RPS | [%d] request every 10s ...", requestPerPeriod/10, requestPerPeriod)

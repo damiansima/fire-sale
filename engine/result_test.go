@@ -105,3 +105,71 @@ func Test_updateScenarioResult(t *testing.T) {
 		})
 	}
 }
+
+func TestConsumeResults(t *testing.T) {
+	tests := []struct {
+		name    string
+		results []Result
+		report  Report
+	}{
+		{"consume one result success", []Result{Result{Status: 200, Timeout: false, job: Job{ScenarioId: 0}}}, Report{}},
+		{"consume one result fail", []Result{Result{Status: 400, Timeout: false, job: Job{ScenarioId: 0}}}, Report{}},
+		{"consume one result timeout", []Result{Result{Status: 0, Timeout: true, job: Job{ScenarioId: 0}}}, Report{}},
+		{"consume one result success job warmup", []Result{Result{Status: 0, Timeout: true, job: Job{IsWarmup: true}}}, Report{}},
+		{"consume two results 2 success", []Result{Result{Status: 200, Timeout: false, job: Job{ScenarioId: 0}}, {Status: 200, Timeout: false, job: Job{ScenarioId: 1}}}, Report{}},
+		{"consume two results 1 success 1 failure", []Result{Result{Status: 200, Timeout: false, job: Job{ScenarioId: 0}}, {Status: 401, Timeout: false, job: Job{ScenarioId: 1}}}, Report{}},
+		{"consume two results 1 success 1 timeout", []Result{Result{Status: 200, Timeout: false, job: Job{ScenarioId: 0}}, {Status: 0, Timeout: true, job: Job{ScenarioId: 1}}}, Report{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			done := make(chan bool)
+			results := make(chan Result, 1000)
+
+			var resultsCount int
+			var successCount int64
+			var failCount int64
+			var timeoutCount int64
+			for _, r := range tt.results {
+				if r.job.IsWarmup {
+					continue
+				}
+				resultsCount++
+				if r.Timeout {
+					timeoutCount++
+				} else if 0 < r.Status && r.Status < 300 {
+					successCount++
+				} else {
+					failCount++
+				}
+
+				results <- r
+			}
+
+			go ConsumeResults(results, done, &tt.report)
+
+			close(results)
+			<-done
+
+			if len(tt.report.ScenarioResults) != resultsCount {
+				t.Errorf("Report scenarion result count is wrong got = %d, want = %d", len(tt.report.ScenarioResults), resultsCount)
+			}
+
+			if int(tt.report.OverallResult.RequestCount) != resultsCount {
+				t.Errorf("Overall request count is wrong got = %d, want = %d", tt.report.OverallResult.RequestCount, resultsCount)
+			}
+
+			if tt.report.OverallResult.SuccessCount != successCount {
+				t.Errorf("Overall sucess count is wrong got = %d, want = %d", tt.report.OverallResult.SuccessCount, successCount)
+			}
+
+			if tt.report.OverallResult.FailCount != failCount {
+				t.Errorf("Overall fail count is wrong got = %d, want = %d", tt.report.OverallResult.FailCount, failCount)
+			}
+
+			if tt.report.OverallResult.TimeoutCount != timeoutCount {
+				t.Errorf("Overall timeout count is wrong got = %d, want = %d", tt.report.OverallResult.TimeoutCount, timeoutCount)
+			}
+		})
+	}
+}
