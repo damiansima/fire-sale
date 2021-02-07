@@ -21,16 +21,16 @@ func (r *Result) isSuccessful() bool {
 }
 
 func ConsumeResults(results chan Result, done chan bool, report *Report) {
-	overallResult := ScenarioResult{}
+	overallScenarioResult := ScenarioResult{}
 	scenarioResults := make(map[int]*ScenarioResult)
 
 	// TODO THIS SHOULD BE ACCUMULATED FOR REPORT PURPOSES
 	var last int64
 	go func() {
 		for _ = range time.Tick(10 * time.Second) {
-			requestPerPeriod := overallResult.RequestCount - last
+			requestPerPeriod := overallScenarioResult.RequestCount - last
 			log.Infof("Requesting: [%d] RPS | [%d] request every 10s ...", requestPerPeriod/10, requestPerPeriod)
-			last = overallResult.RequestCount
+			last = overallScenarioResult.RequestCount
 		}
 	}()
 
@@ -45,7 +45,7 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 			log.Debugf("Warmp result skiping")
 			continue
 		}
-		overallResult.RequestCount++
+		overallScenarioResult.RequestCount++
 		elapsedOverall := result.End.Sub(result.Start)
 		elapsedNetwork := result.Trace.ConnectDoneTime.Sub(result.Trace.ConnectStartTime)
 		elapsedRequest := result.Trace.GotFirstResponseByteTime.Sub(result.Trace.WroteRequestTime)
@@ -60,17 +60,17 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 			actualServerTime = -1 * actualServerTime
 		}
 
-		overallResult.DurationRequestSum += actualServerTime
+		overallScenarioResult.DurationRequestSum += actualServerTime
 		// TODO we should not account failed request but we should account timeout
 		td.Add(actualServerTime.Seconds(), 1)
 
 		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%t]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
 		scenarioResult := getOrCreateScenarioResult(result, scenarioResults)
-		updateScenarioResult(result, actualServerTime, scenarioResult, &overallResult)
+		updateScenarioResult(result, actualServerTime, scenarioResult, &overallScenarioResult)
 	}
-	overallResult.Td = *td
+	overallScenarioResult.Td = *td
 
-	report.OverallResult = overallResult
+	report.OverallResult = overallScenarioResult
 	report.ScenarioResults = scenarioResults
 
 	done <- true
@@ -101,7 +101,6 @@ func updateScenarioResult(result Result, actualServerTime time.Duration, scenari
 		overallResult.SuccessCount++
 		scenarioResult.SuccessCount++
 	} else {
-		//TODO BUG: Fail percentage is not accurate
 		overallResult.FailCount++
 		scenarioResult.FailCount++
 	}
