@@ -35,12 +35,12 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 
 	//TODO we need to change this value and do memory profile
 	td := tdigest.NewWithCompression(100000)
+	// TODO refactor this and the result duration calculation (1)
 	var elapsedNetworkLast time.Duration
 
 	// TODO allow for a channel to plot data points
 	for result := range results {
 		if result.job.IsWarmup {
-			// TODO we may want to have data about this
 			log.Debugf("Warmp result skiping")
 			continue
 		}

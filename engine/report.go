@@ -37,11 +37,6 @@ func (sr *ScenarioResult) TimoutRate() float32 {
 	return float32(((sr.TimeoutCount) * 100) / sr.RequestCount)
 }
 
-// TODO average time should taken from configuration with/without latency
-func (sr *ScenarioResult) RequestDurationAvg() time.Duration {
-	return time.Duration(sr.DurationRequestSum.Nanoseconds() / sr.RequestCount)
-}
-
 func buildReportLines(report Report) []string {
 	reportLines := make([]string, 0)
 
