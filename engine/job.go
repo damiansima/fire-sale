@@ -143,9 +143,9 @@ func allocateJob(id int, isWarmup bool, scenarios []Scenario, distributionsBucke
 	if err != nil {
 		log.Errorf("Fail to select scenario to for job err: %v", err)
 	} else {
-		log.Debugf("Allocating job [%d]", id)
 		job := scenario.JobCreator(id)
 		job.IsWarmup = isWarmup
+		log.Debugf("Allocating Job id:[%d], name:[%s], isWarmup:[%t]", job.Id, job.Name, job.IsWarmup )
 		jobs <- job
 	}
 }
@@ -167,6 +167,6 @@ func selectScenario(scenarios []Scenario, buckets []float32, bucketValue int) (S
 		// TODO it needs to be fixed is not used in time based tests and in request based tests will fail over 100 reques
 		scenario = scenarios[SelectBucketContaining(bucketValue, buckets)]
 	}
-	log.Debugf("Selecting Scenario %s", scenario.Name)
+	log.Debugf("Selecting Scenario id: [%d], name: [%s]", scenario.Id, scenario.Name)
 	return scenario, nil
 }

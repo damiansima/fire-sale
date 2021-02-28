@@ -18,6 +18,10 @@ func DoRequest(method, url string, reqBody io.Reader, headers map[string]string,
 	transport := buildTransport(allowConnectionReuse, certificates)
 
 	request, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		log.Warnf("Fail to create request %s", err)
+		return Result{}
+	}
 	if headers != nil {
 		for k, v := range headers {
 			log.Tracef("Setting header %s : %s", k, v)
@@ -25,23 +29,15 @@ func DoRequest(method, url string, reqBody io.Reader, headers map[string]string,
 		}
 	}
 
-	if err != nil {
-		log.Tracef("Fail to create request %s", err)
-		// TODO this should be different
-		return Result{}
-	}
-
 	client := http.Client{Transport: transport}
 	client.Timeout = timeout
 	log.Tracef("Defined timout %s", client.Timeout)
 
-	traceableTransport := &TraceableTransport{Trace: &Trace{}}
+	traceableTransport := &TraceableTransport{Trace: &Trace{}, LogEnable: false}
 	trace := NewTrace(*traceableTransport)
 	request = request.WithContext(httptrace.WithClientTrace(request.Context(), trace))
 
-	start := time.Now()
 	resp, err := client.Do(request)
-	end := time.Now()
 
 	if err != nil {
 		log.Tracef("Fail to execute request %s", err)
@@ -49,7 +45,7 @@ func DoRequest(method, url string, reqBody io.Reader, headers map[string]string,
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			isTimeOut = true
 		}
-		return Result{Start: start, End: end, Timeout: isTimeOut, Trace: *traceableTransport.Trace}
+		return Result{Start: traceableTransport.Trace.GetConnTime, End: traceableTransport.Trace.PutIdleConnTime, Timeout: isTimeOut, Trace: *traceableTransport.Trace}
 	}
 
 	defer resp.Body.Close()
@@ -60,8 +56,7 @@ func DoRequest(method, url string, reqBody io.Reader, headers map[string]string,
 		log.Tracef("Resp Headers [%v]", resp.Header)
 		log.Tracef(string(body))
 	}
-
-	return Result{Start: start, End: end, Status: resp.StatusCode, Trace: *traceableTransport.Trace}
+	return Result{Start: traceableTransport.Trace.GetConnTime, End: traceableTransport.Trace.PutIdleConnTime, Status: resp.StatusCode, Trace: *traceableTransport.Trace}
 }
 
 func buildTransport(allowConnectionReuse bool, certificates Certificates) http.RoundTripper {
