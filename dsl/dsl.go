@@ -163,7 +163,7 @@ func mapScenario(scId int, dslSc Scenario, host string) engine.Scenario {
 }
 
 func buildJobSuccessValidator(status []string) func(int) bool {
-	log.Debugf("Building job sucess validator for %v...", status)
+	log.Tracef("Building job sucess validator for %v...", status)
 	if status != nil && len(status) > 0 {
 		var validatorChain []func(status int) bool
 		for _, statusToken := range status {

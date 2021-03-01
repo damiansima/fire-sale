@@ -20,6 +20,24 @@ func (r *Result) isSuccessful() bool {
 	return r.job.ValidateSuccess(r.Status)
 }
 
+func (r *Result) getTotalDuration() time.Duration {
+	//elapsedOverall := result.End.Sub(result.Start)
+	return r.Trace.PutIdleConnTime.Sub(r.Trace.GetConnTime)
+}
+func (r *Result) getConnectionDuration() time.Duration {
+	// elapsedNetwork := result.Trace.ConnectDoneTime.Sub(result.Trace.ConnectStartTime)
+	return r.Trace.GetConnTime.Sub(r.Trace.GetConnTime)
+}
+func (r *Result) getRequestDuration() time.Duration {
+	// elapsedRequest := result.Trace.GotFirstResponseByteTime.Sub(result.Trace.WroteRequestTime)
+	requestDuration := r.Trace.GotFirstResponseByteTime.Sub(r.Trace.WroteRequestTime)
+	// TODO When did we need to do this right?
+	if requestDuration < 0 {
+		requestDuration = -1 * requestDuration
+	}
+	return requestDuration
+}
+
 func ConsumeResults(results chan Result, done chan bool, report *Report) {
 	overallScenarioResult := ScenarioResult{}
 	scenarioResults := make(map[int]*ScenarioResult)
@@ -33,10 +51,9 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 		}
 	}()
 
-	//TODO we need to change this value and do memory profile
+	// TODO we should track times of success|errors|timeout separately
+	// TODO we need to change this value and do memory profile
 	td := tdigest.NewWithCompression(100000)
-	// TODO refactor this and the result duration calculation (1)
-	var elapsedNetworkLast time.Duration
 
 	// TODO allow for a channel to plot data points
 	for result := range results {
@@ -45,27 +62,14 @@ func ConsumeResults(results chan Result, done chan bool, report *Report) {
 			continue
 		}
 		overallScenarioResult.RequestCount++
-		elapsedOverall := result.End.Sub(result.Start)
-		elapsedNetwork := result.Trace.ConnectDoneTime.Sub(result.Trace.ConnectStartTime)
-		elapsedRequest := result.Trace.GotFirstResponseByteTime.Sub(result.Trace.WroteRequestTime)
-		//TODO WE ASSUME NETWORK AS LATENCY MAY BE KILL IT?
-		if elapsedNetwork != 0 {
-			elapsedNetworkLast = elapsedNetwork
-			log.Tracef("change network time")
-		}
-		// TODO this measurement should be able to turn on and off
-		actualServerTime := elapsedRequest - elapsedNetworkLast
-		if actualServerTime < 0 {
-			actualServerTime = -1 * actualServerTime
-		}
+		requestDuration := result.getRequestDuration()
 
-		overallScenarioResult.DurationRequestSum += actualServerTime
-		// TODO we should not account failed request but we should account timeout
-		td.Add(actualServerTime.Seconds(), 1)
+		td.Add(requestDuration.Seconds(), 1)
+		overallScenarioResult.DurationRequestSum += requestDuration
 
-		log.Tracef("The job id [%d] lasted [%s||%s||%s] status [%d] - timeout [%t]", result.job.Id, elapsedOverall, elapsedRequest, actualServerTime, result.Status, result.Timeout)
+		log.Debugf("The job id [%d] lasted -  status [%d] - timeout [%t] - Durations: [Connection: %s||Request: %s||Total:%s]", result.job.Id, result.Status, result.Timeout, result.getConnectionDuration(), result.getRequestDuration(), result.getTotalDuration())
 		scenarioResult := getOrCreateScenarioResult(result, scenarioResults)
-		updateScenarioResult(result, actualServerTime, scenarioResult, &overallScenarioResult)
+		updateScenarioResult(result, requestDuration, scenarioResult, &overallScenarioResult)
 	}
 	overallScenarioResult.Td = *td
 
@@ -88,10 +92,10 @@ func getOrCreateScenarioResult(result Result, scenarioResults map[int]*ScenarioR
 	return scenarioResult
 }
 
-func updateScenarioResult(result Result, actualServerTime time.Duration, scenarioResult *ScenarioResult, overallResult *ScenarioResult) {
+func updateScenarioResult(result Result, requestDuration time.Duration, scenarioResult *ScenarioResult, overallResult *ScenarioResult) {
 	scenarioResult.RequestCount++
-	scenarioResult.DurationRequestSum += actualServerTime
-	scenarioResult.Td.Add(actualServerTime.Seconds(), 1)
+	scenarioResult.DurationRequestSum += requestDuration
+	scenarioResult.Td.Add(requestDuration.Seconds(), 1)
 
 	if result.Timeout {
 		overallResult.TimeoutCount++
